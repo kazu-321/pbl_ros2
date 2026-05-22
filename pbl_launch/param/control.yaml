@@ -1,0 +1,4 @@
+/**:
+  ros__parameters:
+    chassis_max_wheel_speed_rad_s: 30.0
+    chassis_acceleration_rate_s: 1.0
