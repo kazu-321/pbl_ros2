@@ -11,6 +11,8 @@
 
   <depend>pbl_control</depend>
   <depend>natto_msgs</depend>
+  <depend>cartographer_ros</depend>
+  <depend>unitree_lidar_ros2</depend>
   <depend>robot_state_publisher</depend>
   <depend>tf2_ros</depend>
   <depend>xacro</depend>

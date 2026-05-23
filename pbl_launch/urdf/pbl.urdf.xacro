@@ -3,12 +3,12 @@
 
   <xacro:property name="body_length" value="0.45"/>
   <xacro:property name="body_width" value="0.45"/>
-  <xacro:property name="body_height" value="0.08"/>
+  <xacro:property name="body_height" value="0.015"/>
   <xacro:property name="wheel_radius" value="0.05"/>
   <xacro:property name="wheel_width" value="0.01"/>
-  <xacro:property name="rear_wheel_from_rear_edge" value="0.085"/>
-  <xacro:property name="rear_wheel_x" value="${-body_length / 2.0 + rear_wheel_from_rear_edge}"/>
-  <xacro:property name="rear_wheel_y" value="${body_width / 2.0 + wheel_width / 2.0}"/>
+  <xacro:property name="wheel_separation" value="0.46"/>
+  <xacro:property name="base_center_offset" value="${body_length / 2.0 - 0.085}"/>
+  <xacro:property name="rear_wheel_y" value="${wheel_separation / 2.0}"/>
   <xacro:property name="rear_wheel_z" value="${wheel_radius}"/>
 
   <material name="body_gray">
@@ -25,14 +25,14 @@
       <inertia ixx="0.20" ixy="0.0" ixz="0.0" iyy="0.20" iyz="0.0" izz="0.30"/>
     </inertial>
     <visual>
-      <origin xyz="0 0 ${wheel_radius + body_height / 2.0}" rpy="0 0 0"/>
+      <origin xyz="${base_center_offset} 0 ${wheel_radius + body_height / 2.0}" rpy="0 0 0"/>
       <geometry>
         <box size="${body_length} ${body_width} ${body_height}"/>
       </geometry>
       <material name="body_gray"/>
     </visual>
     <collision>
-      <origin xyz="0 0 ${wheel_radius + body_height / 2.0}" rpy="0 0 0"/>
+      <origin xyz="${base_center_offset} 0 ${wheel_radius + body_height / 2.0}" rpy="0 0 0"/>
       <geometry>
         <box size="${body_length} ${body_width} ${body_height}"/>
       </geometry>
@@ -43,7 +43,7 @@
   <joint name="base_link_to_unilidar_lidar" type="fixed">
     <parent link="base_link"/>
     <child link="unilidar_lidar"/>
-    <origin xyz="${body_length / 2.0} 0 0" rpy="0 0 0"/>
+    <origin xyz="${body_length / 2.0 + base_center_offset} 0 ${wheel_radius + body_height / 2.0}" rpy="0 0 0"/>
   </joint>
 
   <link name="unilidar_imu"/>
@@ -83,7 +83,7 @@
     </joint>
   </xacro:macro>
 
-  <xacro:drive_wheel name="joint0" x="${rear_wheel_x}" y="${-rear_wheel_y}"/>
-  <xacro:drive_wheel name="joint1" x="${rear_wheel_x}" y="${+rear_wheel_y}"/>
+  <xacro:drive_wheel name="joint0" x="0.0" y="${-rear_wheel_y}"/>
+  <xacro:drive_wheel name="joint1" x="0.0" y="${rear_wheel_y}"/>
 
 </robot>
