@@ -190,27 +190,27 @@ POSE_GRAPH.optimize_every_n_nodes = 100
   -- >       ループクロージャが実行されます。
 
 
-POSE_GRAPH.constraint_builder.sampling_ratio = 0.8
+POSE_GRAPH.constraint_builder.sampling_ratio = 0.3
   -- >  [double] / A constraint will be added if the proportion of added constraints
   -- >  to potential constraints drops below this number.
   -- >       潜在的な制約に対する追加された制約の割合が、この設定値より低くなると、
   -- >       制約が追加されることになります。
-POSE_GRAPH.constraint_builder.max_constraint_distance = 20.
+POSE_GRAPH.constraint_builder.max_constraint_distance = 15.
   -- >  [double] / Threshold for poses to be considered near a submap.
   -- >       サブマップと近い poses について、考慮する距離の閾値。
-POSE_GRAPH.constraint_builder.min_score = 0.50
+POSE_GRAPH.constraint_builder.min_score = 0.55
   -- >  [double] / Threshold for the scan match score below which a match is not
   -- >  considered. Low scores indicate that the scan and map do not look similar.
   -- >       スキャンマッチスコアの閾値で、これ以下ではマッチングが考慮されない。
   -- >       低いスコアは、スキャンとマップが似ていないことを示す。
-POSE_GRAPH.constraint_builder.global_localization_min_score = 0.50
+POSE_GRAPH.constraint_builder.global_localization_min_score = 0.55
   -- >  [double] / Threshold below which global localizations are not trusted.
   -- >       global localization を信頼しないようにするスコア閾値。
-POSE_GRAPH.constraint_builder.loop_closure_translation_weight = 1.8e4
+POSE_GRAPH.constraint_builder.loop_closure_translation_weight = 1.1e4
   -- >  [double] / Weight used in the optimization problem for the translational
   -- >  component of loop closure constraints.
   -- >       ループクロージャー制約の"並進"成分に対する最適化問題で使用される重み。
-POSE_GRAPH.constraint_builder.loop_closure_rotation_weight = 1.8e5
+POSE_GRAPH.constraint_builder.loop_closure_rotation_weight = 1e5
   -- >  [double] / Weight used in the optimization problem for the rotational
   -- >  component of loop closure constraints.
   -- >       ループクロージャー制約の"回転"成分に対する最適化問題で使用される重み。
@@ -253,7 +253,7 @@ POSE_GRAPH.constraint_builder.ceres_scan_matcher.ceres_solver_options.num_thread
   -- >  [int32] / Not yet documented.
 
 
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.branch_and_bound_depth = 9
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.branch_and_bound_depth = 8
   -- >  [int32] / Number of precomputed grids to use.
   -- >       事前計算に使用するグリッドの数。
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.full_resolution_depth = 3
@@ -268,15 +268,15 @@ POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.min_low_resolutio
   -- >  is not considered. Only used for 3D.
   -- >       低解像度でのグリッドにおける、これ以下ではマッチング考慮されなくなるスコア閾値。
   -- >       3D にのみ使用される。
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.linear_xy_search_window = 12.
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.linear_xy_search_window = 10.
   -- >  [double] / Linear search window in the plane orthogonal to gravity in which the
   -- >  best possible scan alignment will be found.
   -- >       重力に直交する平面において、最適なスキャンアライメントが得られるための線形探索 window の数。
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.linear_z_search_window = 3.
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.linear_z_search_window = 5.
   -- >  [double] / Linear search window in the gravity direction in which the best possible
   -- >  scan alignment will be found.
   -- >       重力方向において、最適なスキャンアライメントが得られるための線形探索 window の数。
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.angular_search_window = math.rad(20.)
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher_3d.angular_search_window = math.rad(15.)
   -- >  [double] / Minimum angular search window in which the best possible scan
   -- >  alignment will be found.
   -- >       最適なスキャンアライメントが得られる最小の角度探索 Window。
@@ -381,7 +381,7 @@ POSE_GRAPH.max_num_final_iterations = 200
   -- >  [int32] / Number of iterations to use in 'optimization_problem_options'
   -- >  for the final optimization.
   -- >       'optimization_problem options' で最終的な最適化に使用する反復回数
-POSE_GRAPH.global_sampling_ratio = 0.01
+POSE_GRAPH.global_sampling_ratio = 0.003
   -- >  [double] / Rate at which we sample a single trajectory’s nodes for global
   -- >  localization.
   -- >       グローバルな Localization 時における、1つのトラジェクトリーのノードがサンプリングする速さ。
@@ -580,7 +580,7 @@ TRAJECTORY_BUILDER_3D.submaps.low_resolution = 0.45
   -- >  [double] / Resolution of the ‘low_resolution’ version of the map in
   -- >  meters used for local SLAM only.
   -- >       Local SLAM のみに使用される 'low_resolution' 版のマップの解像度（メートル単位）。
-TRAJECTORY_BUILDER_3D.submaps.num_range_data = 100
+TRAJECTORY_BUILDER_3D.submaps.num_range_data = 30
   -- >  [int32] / Number of range data before adding a new submap. Each submap will
   -- >  get twice the number of range data inserted: First for initialization without
   -- >  being matched against, then while being matched.
