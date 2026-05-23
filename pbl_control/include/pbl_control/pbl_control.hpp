@@ -42,36 +42,21 @@ class pbl_control : public rclcpp::Node {
     double max_linear_acceleration_m_s2_;
     double max_yaw_acceleration_rad_s2_;
     bool   power_state_;
-    bool   odom_initialized_;
-
-    std::string odom_frame_id_;
-    std::string base_frame_id_;
-
     rclcpp::Time last_joy_time_;
     rclcpp::Time last_joint_state_time_;
-    double       odom_x_;
-    double       odom_y_;
-    double       odom_yaw_;
-    double       last_left_wheel_position_rad_;
-    double       last_right_wheel_position_rad_;
 
     void joy_callback (const sensor_msgs::msg::Joy::SharedPtr msg);
-    void joint_state_callback (const sensor_msgs::msg::JointState::SharedPtr msg);
     void publish_power_state ();
     void publish_joint_commands (double linear_speed_m_s, double yaw_speed_rad_s);
     void publish_command_velocity (double linear_speed_m_s, double yaw_speed_rad_s);
-    void publish_odometry (const rclcpp::Time &stamp, double linear_speed_m_s, double yaw_speed_rad_s);
 
     static double apply_deadzone (double value, double deadzone);
     static double normalize_pair (double value_a, double value_b, double value);
 
     rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_command_publisher_;
     rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr command_velocity_publisher_;
-    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odometry_publisher_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr power_publisher_;
     rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_subscriber_;
-    rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_state_subscriber_;
-    std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 };
 }  // namespace pbl_control
 

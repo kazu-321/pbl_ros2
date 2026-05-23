@@ -23,26 +23,18 @@ pbl_control::pbl_control (const rclcpp::NodeOptions &node_options)
     : Node ("pbl_control", node_options),
       chassis_max_wheel_speed_rad_s_ (this->declare_parameter<double> ("chassis_max_wheel_speed_rad_s", 30.0)),
       chassis_acceleration_rate_s_ (this->declare_parameter<double> ("chassis_acceleration_rate_s", 1.0)),
-            wheel_radius_ (this->declare_parameter<double> ("wheel_radius", 0.05)),
-            wheel_separation_ (this->declare_parameter<double> ("wheel_separation", 0.46)),
-            wheel_axle_x_ (this->declare_parameter<double> ("wheel_axle_x", -0.14)),
-            odom_frame_id_ (this->declare_parameter<std::string> ("odom_frame_id", "odom")),
-            base_frame_id_ (this->declare_parameter<std::string> ("base_frame_id", "base_link")),
-            max_linear_speed_m_s_ (0.0),
+      wheel_radius_ (this->declare_parameter<double> ("wheel_radius", 0.05)),
+      wheel_separation_ (this->declare_parameter<double> ("wheel_separation", 0.46)),
+      wheel_axle_x_ (this->declare_parameter<double> ("wheel_axle_x", -0.14)),
+      max_linear_speed_m_s_ (0.0),
       max_yaw_speed_rad_s_ (0.0),
       current_linear_speed_m_s_ (0.0),
       current_yaw_speed_rad_s_ (0.0),
       max_linear_acceleration_m_s2_ (0.0),
       max_yaw_acceleration_rad_s2_ (0.0),
       power_state_ (false),
-    odom_initialized_ (false),
-    last_joy_time_ (this->now ()),
-    last_joint_state_time_ (this->now ()),
-    odom_x_ (0.0),
-    odom_y_ (0.0),
-    odom_yaw_ (0.0),
-    last_left_wheel_position_rad_ (0.0),
-    last_right_wheel_position_rad_ (0.0) {
+      last_joy_time_ (this->now ()),
+      last_joint_state_time_ (this->now ()) {
     if (chassis_acceleration_rate_s_ <= 0.0) {
         RCLCPP_WARN (this->get_logger (), "chassis_acceleration_rate_s must be positive. Falling back to 1.0 s.");
         chassis_acceleration_rate_s_ = 1.0;
@@ -63,11 +55,8 @@ pbl_control::pbl_control (const rclcpp::NodeOptions &node_options)
     max_yaw_acceleration_rad_s2_  = max_yaw_speed_rad_s_ / chassis_acceleration_rate_s_;
     joint_command_publisher_      = this->create_publisher<sensor_msgs::msg::JointState> ("/joint_commands", rclcpp::QoS (10));
     command_velocity_publisher_   = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/command_velocity", rclcpp::QoS (10));
-    odometry_publisher_           = this->create_publisher<nav_msgs::msg::Odometry> ("/odometry", rclcpp::QoS (10));
     power_publisher_              = this->create_publisher<std_msgs::msg::Bool> ("/power", rclcpp::QoS (10));
     joy_subscriber_               = this->create_subscription<sensor_msgs::msg::Joy> ("/controller/joy", rclcpp::QoS (10), std::bind (&pbl_control::joy_callback, this, std::placeholders::_1));
-    joint_state_subscriber_       = this->create_subscription<sensor_msgs::msg::JointState> ("/joint_states", rclcpp::SensorDataQoS (), std::bind (&pbl_control::joint_state_callback, this, std::placeholders::_1));
-    tf_broadcaster_               = std::make_shared<tf2_ros::TransformBroadcaster> (this);
 
     publish_power_state ();
 
@@ -79,8 +68,6 @@ pbl_control::pbl_control (const rclcpp::NodeOptions &node_options)
     RCLCPP_INFO (this->get_logger (), "wheel_axle_x: %.3f", wheel_axle_x_);
     RCLCPP_INFO (this->get_logger (), "max_linear_speed_m_s: %.3f", max_linear_speed_m_s_);
     RCLCPP_INFO (this->get_logger (), "max_yaw_speed_rad_s: %.3f", max_yaw_speed_rad_s_);
-    RCLCPP_INFO (this->get_logger (), "odom_frame_id: %s", odom_frame_id_.c_str ());
-    RCLCPP_INFO (this->get_logger (), "base_frame_id: %s", base_frame_id_.c_str ());
     RCLCPP_INFO (this->get_logger (), "max_linear_acceleration_m_s2: %.3f", max_linear_acceleration_m_s2_);
     RCLCPP_INFO (this->get_logger (), "max_yaw_acceleration_rad_s2: %.3f", max_yaw_acceleration_rad_s2_);
 }
@@ -109,11 +96,11 @@ void pbl_control::publish_joint_commands (double linear_speed_m_s, double yaw_sp
 
     sensor_msgs::msg::JointState joint_commands_msg;
     joint_commands_msg.header.frame_id = "command/base_link";
-    joint_commands_msg.header.stamp = this->now ();
-    joint_commands_msg.name         = {"joint0", "joint1"};
-    joint_commands_msg.position     = {0.0, 0.0};
-    joint_commands_msg.velocity     = {right_wheel_speed_rad_s, left_wheel_speed_rad_s};
-    joint_commands_msg.effort       = {0.0, 0.0};
+    joint_commands_msg.header.stamp    = this->now ();
+    joint_commands_msg.name            = {"joint0", "joint1"};
+    joint_commands_msg.position        = {0.0, 0.0};
+    joint_commands_msg.velocity        = {right_wheel_speed_rad_s, left_wheel_speed_rad_s};
+    joint_commands_msg.effort          = {0.0, 0.0};
     joint_command_publisher_->publish (joint_commands_msg);
 }
 
@@ -125,107 +112,6 @@ void pbl_control::publish_command_velocity (double linear_speed_m_s, double yaw_
     twist_msg.twist.linear.y  = -yaw_speed_rad_s * wheel_axle_x_;
     twist_msg.twist.angular.z = yaw_speed_rad_s;
     command_velocity_publisher_->publish (twist_msg);
-}
-
-void pbl_control::publish_odometry (const rclcpp::Time &stamp, double linear_speed_m_s, double yaw_speed_rad_s) {
-    nav_msgs::msg::Odometry odom_msg;
-    odom_msg.header.stamp    = stamp;
-    odom_msg.header.frame_id = odom_frame_id_;
-    odom_msg.child_frame_id   = base_frame_id_;
-    odom_msg.pose.pose.position.x = odom_x_;
-    odom_msg.pose.pose.position.y = odom_y_;
-    odom_msg.pose.pose.position.z = 0.0;
-
-    tf2::Quaternion quaternion;
-    quaternion.setRPY (0.0, 0.0, odom_yaw_);
-    odom_msg.pose.pose.orientation.x = quaternion.x ();
-    odom_msg.pose.pose.orientation.y = quaternion.y ();
-    odom_msg.pose.pose.orientation.z = quaternion.z ();
-    odom_msg.pose.pose.orientation.w = quaternion.w ();
-
-    odom_msg.twist.twist.linear.x  = linear_speed_m_s;
-    odom_msg.twist.twist.linear.y  = -yaw_speed_rad_s * wheel_axle_x_;
-    odom_msg.twist.twist.angular.z = yaw_speed_rad_s;
-    odometry_publisher_->publish (odom_msg);
-
-    if (tf_broadcaster_ != nullptr) {
-        geometry_msgs::msg::TransformStamped transform_msg;
-        transform_msg.header.stamp    = stamp;
-        transform_msg.header.frame_id  = odom_frame_id_;
-        transform_msg.child_frame_id   = base_frame_id_;
-        transform_msg.transform.translation.x = odom_x_;
-        transform_msg.transform.translation.y = odom_y_;
-        transform_msg.transform.translation.z = 0.0;
-        transform_msg.transform.rotation      = odom_msg.pose.pose.orientation;
-        tf_broadcaster_->sendTransform (transform_msg);
-    }
-}
-
-void pbl_control::joint_state_callback (const sensor_msgs::msg::JointState::SharedPtr msg) {
-    std::size_t right_wheel_index = msg->name.size ();
-    std::size_t left_wheel_index  = msg->name.size ();
-
-    for (std::size_t index = 0; index < msg->name.size (); ++index) {
-        if (msg->name[index] == kRightWheelJointName) {
-            right_wheel_index = index;
-        }
-        if (msg->name[index] == kLeftWheelJointName) {
-            left_wheel_index = index;
-        }
-    }
-
-    if (right_wheel_index == msg->name.size () || left_wheel_index == msg->name.size ()) {
-        RCLCPP_WARN_THROTTLE (this->get_logger (), *this->get_clock (), 3000, "Could not find joint0/joint1 in /joint_states.");
-        return;
-    }
-
-    const bool has_positions = right_wheel_index < msg->position.size () && left_wheel_index < msg->position.size ();
-    const bool has_velocities = right_wheel_index < msg->velocity.size () && left_wheel_index < msg->velocity.size ();
-
-    const bool has_stamp = msg->header.stamp.sec != 0 || msg->header.stamp.nanosec != 0;
-    const rclcpp::Time stamp = has_stamp ? rclcpp::Time (msg->header.stamp) : this->now ();
-
-    if (!odom_initialized_) {
-        last_joint_state_time_        = stamp;
-        odom_initialized_            = true;
-        last_right_wheel_position_rad_ = has_positions ? msg->position[right_wheel_index] : 0.0;
-        last_left_wheel_position_rad_  = has_positions ? msg->position[left_wheel_index] : 0.0;
-        publish_odometry (stamp, 0.0, 0.0);
-        return;
-    }
-
-    const double dt = std::max ((stamp - last_joint_state_time_).seconds (), 0.0);
-    last_joint_state_time_ = stamp;
-
-    double right_wheel_delta_rad = 0.0;
-    double left_wheel_delta_rad  = 0.0;
-
-    if (has_positions) {
-        right_wheel_delta_rad = msg->position[right_wheel_index] - last_right_wheel_position_rad_;
-        left_wheel_delta_rad  = msg->position[left_wheel_index] - last_left_wheel_position_rad_;
-        last_right_wheel_position_rad_ = msg->position[right_wheel_index];
-        last_left_wheel_position_rad_  = msg->position[left_wheel_index];
-    } else if (has_velocities && dt > 0.0) {
-        right_wheel_delta_rad = msg->velocity[right_wheel_index] * dt;
-        left_wheel_delta_rad  = msg->velocity[left_wheel_index] * dt;
-    } else {
-        publish_odometry (stamp, 0.0, 0.0);
-        return;
-    }
-
-    const double right_wheel_speed_m_s = (dt > 0.0) ? (right_wheel_delta_rad * wheel_radius_ / dt) : 0.0;
-    const double left_wheel_speed_m_s  = (dt > 0.0) ? (left_wheel_delta_rad * wheel_radius_ / dt) : 0.0;
-    const double linear_speed_m_s      = 0.5 * (left_wheel_speed_m_s + right_wheel_speed_m_s);
-    const double yaw_speed_rad_s       = (right_wheel_speed_m_s - left_wheel_speed_m_s) / wheel_separation_;
-    const double lateral_speed_m_s     = -yaw_speed_rad_s * wheel_axle_x_;
-    const double delta_yaw_rad         = yaw_speed_rad_s * dt;
-    const double yaw_midpoint          = odom_yaw_ + delta_yaw_rad * 0.5;
-
-    odom_x_ += (std::cos (yaw_midpoint) * linear_speed_m_s - std::sin (yaw_midpoint) * lateral_speed_m_s) * dt;
-    odom_y_ += (std::sin (yaw_midpoint) * linear_speed_m_s + std::cos (yaw_midpoint) * lateral_speed_m_s) * dt;
-    odom_yaw_ = std::atan2 (std::sin (odom_yaw_ + delta_yaw_rad), std::cos (odom_yaw_ + delta_yaw_rad));
-
-    publish_odometry (stamp, linear_speed_m_s, yaw_speed_rad_s);
 }
 
 void pbl_control::joy_callback (const sensor_msgs::msg::Joy::SharedPtr msg) {
