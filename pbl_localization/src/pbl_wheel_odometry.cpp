@@ -1,4 +1,4 @@
-#include "pbl_localization/pbl_localization.hpp"
+#include "pbl_localization/pbl_wheel_odometry.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -7,10 +7,10 @@
 #include "rclcpp_components/register_node_macro.hpp"
 #include "tf2/LinearMath/Quaternion.h"
 
-namespace pbl_localization {
+namespace pbl_wheel_odometry {
 
-pbl_localization::pbl_localization(const rclcpp::NodeOptions & options)
-: Node("pbl_localization", options),
+pbl_wheel_odometry::pbl_wheel_odometry(const rclcpp::NodeOptions & options)
+: Node("pbl_wheel_odometry", options),
   odom_frame_id_(this->declare_parameter<std::string>("odom_frame_id", "odom")),
   base_frame_id_(this->declare_parameter<std::string>("base_frame_id", "base_link")),
   wheel_radius_(this->declare_parameter<double>("wheel_radius", 0.05)),
@@ -23,9 +23,9 @@ pbl_localization::pbl_localization(const rclcpp::NodeOptions & options)
   }
   joint_state_sub_ = this->create_subscription<sensor_msgs::msg::JointState>(
     "/joint_states", rclcpp::SensorDataQoS(),
-    std::bind(&pbl_localization::joint_state_callback, this, std::placeholders::_1));
+    std::bind(&pbl_wheel_odometry::joint_state_callback, this, std::placeholders::_1));
 
-  RCLCPP_INFO(this->get_logger(), "pbl_localization initialized");
+  RCLCPP_INFO(this->get_logger(), "pbl_wheel_odometry initialized");
   RCLCPP_INFO(this->get_logger(), "wheel_radius: %.3f", wheel_radius_);
   RCLCPP_INFO(this->get_logger(), "wheel_separation: %.3f", wheel_separation_);
   RCLCPP_INFO(this->get_logger(), "odom_frame_id: %s", odom_frame_id_.c_str());
@@ -33,7 +33,7 @@ pbl_localization::pbl_localization(const rclcpp::NodeOptions & options)
   RCLCPP_INFO(this->get_logger(), "publish_tf: %s", publish_tf_ ? "true" : "false");
 }
 
-void pbl_localization::joint_state_callback(const sensor_msgs::msg::JointState::SharedPtr msg)
+void pbl_wheel_odometry::joint_state_callback(const sensor_msgs::msg::JointState::SharedPtr msg)
 {
   std::size_t right_wheel_index = msg->name.size();
   std::size_t left_wheel_index = msg->name.size();
@@ -98,7 +98,7 @@ void pbl_localization::joint_state_callback(const sensor_msgs::msg::JointState::
   publish_odometry(stamp, linear_speed_m_s, yaw_speed_rad_s);
 }
 
-void pbl_localization::publish_odometry(
+void pbl_wheel_odometry::publish_odometry(
   const rclcpp::Time & stamp, double linear_speed_m_s, double yaw_speed_rad_s)
 {
   nav_msgs::msg::Odometry odom_msg;
@@ -134,6 +134,6 @@ void pbl_localization::publish_odometry(
   tf_broadcaster_->sendTransform(tf_msg);
 }
 
-}  // namespace pbl_localization
+}  // namespace pbl_wheel_odometry
 
-RCLCPP_COMPONENTS_REGISTER_NODE(pbl_localization::pbl_localization)
+RCLCPP_COMPONENTS_REGISTER_NODE(pbl_wheel_odometry::pbl_wheel_odometry)

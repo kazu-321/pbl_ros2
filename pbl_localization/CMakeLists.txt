@@ -9,8 +9,8 @@ ament_auto_add_library(${PROJECT_NAME} SHARED
 )
 
 rclcpp_components_register_node(${PROJECT_NAME}
-  PLUGIN "pbl_localization::pbl_localization"
-  EXECUTABLE pbl_localization_node
+  PLUGIN "pbl_wheel_odometry::pbl_wheel_odometry"
+  EXECUTABLE pbl_wheel_odometry_node
 )
 
 ament_auto_package(USE_SCOPED_HEADER_INSTALL_DIR)

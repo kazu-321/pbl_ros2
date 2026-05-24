@@ -1,5 +1,5 @@
-#ifndef PBL_LOCALIZATION__PBL_LOCALIZATION_HPP_
-#define PBL_LOCALIZATION__PBL_LOCALIZATION_HPP_
+#ifndef PBL_WHEEL_ODOMETRY__PBL_WHEEL_ODOMETRY_HPP_
+#define PBL_WHEEL_ODOMETRY__PBL_WHEEL_ODOMETRY_HPP_
 
 #include <memory>
 #include <string>
@@ -9,11 +9,11 @@
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 
-namespace pbl_localization {
+namespace pbl_wheel_odometry {
 
-class pbl_localization : public rclcpp::Node {
+class pbl_wheel_odometry : public rclcpp::Node {
 public:
-  explicit pbl_localization(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  explicit pbl_wheel_odometry(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
 
 private:
   void joint_state_callback(const sensor_msgs::msg::JointState::SharedPtr msg);
@@ -39,6 +39,6 @@ private:
   double last_right_wheel_position_rad_ = 0.0;
 };
 
-}  // namespace pbl_localization
+}  // namespace pbl_wheel_odometry
 
-#endif  // PBL_LOCALIZATION__PBL_LOCALIZATION_HPP_
+#endif  // PBL_WHEEL_ODOMETRY__PBL_WHEEL_ODOMETRY_HPP_

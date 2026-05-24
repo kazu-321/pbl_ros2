@@ -1,6 +1,6 @@
 <launch>
     <node_container pkg="rclcpp_components" exec="component_container" name="pbl_container" namespace="/">
-        <composable_node pkg="pbl_localization" plugin="pbl_localization::pbl_localization" name="pbl_localization">
+        <composable_node pkg="pbl_localization" plugin="pbl_wheel_odometry::pbl_wheel_odometry" name="pbl_wheel_odometry">
             <param name="publish_tf" value="false"/>
         </composable_node>
         <composable_node pkg="robot_state_publisher" plugin="robot_state_publisher::RobotStatePublisher" name="robot_state_publisher" namespace="/">
@@ -23,7 +23,7 @@
         <param name="filter_size_map" value="0.1"/>
         <param name="cube_side_length" value="1000.0"/>
         <param name="runtime_pos_log_enable" value="false"/>
-        <param name="odom_header_frame_id" value="map"/>
+        <param name="odom_header_frame_id" value="odom"/>
         <param name="odom_child_frame_id" value="base_link"/>
         <param name="use_sim_time" value="true"/>
 
@@ -34,6 +34,9 @@
         <remap from="cloud_registered_body" to="/lio/cloud_registered_body"/>
         <remap from="path" to="/lio/trajectory"/>
     </node>
+
+    <node pkg="tf2_ros" exec="static_transform_publisher" name="static_transform_publisher" output="screen"
+        args="0 0 0 0 0 0 map odom"/>
     
     <executable cmd="python3 $(find-pkg-share pbl_launch)/launch/publish_pcd.py $(find-pkg-share pbl_launch)/map/map.pcd"/>
 
