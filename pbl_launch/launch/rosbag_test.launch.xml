@@ -28,6 +28,26 @@
         <param name="alignment_period_sec" value="1.0"/>
     </node>
 
+    <node pkg="pbl_sensing" exec="pbl_pointcloud2_filter_node" name="pbl_pointcloud2_filter" output="screen">
+        <param name="input_topic" value="/unilidar/cloud"/>
+        <param name="output_topic" value="/unilidar/cloud_filtered"/>
+        <param name="target_frame_id" value="base_link"/>
+        <param name="body_box_center_x" value="0.14"/>
+        <param name="body_box_center_y" value="0.0"/>
+        <param name="body_box_center_z" value="0.1"/>
+        <param name="body_box_size_x" value="0.45"/>
+        <param name="body_box_size_y" value="0.55"/>
+        <param name="body_box_size_z" value="0.15"/>
+        <param name="pc_box_center_x" value="-0.04"/>
+        <param name="pc_box_center_y" value="0.0"/>
+        <param name="pc_box_center_z" value="0.315"/>
+        <param name="pc_box_size_x" value="0.2"/>
+        <param name="pc_box_size_y" value="0.7"/>
+        <param name="pc_box_size_z" value="0.5"/>
+        <param name="transform_timeout_sec" value="0.1"/>
+        <param name="use_sim_time" value="true"/>
+    </node>
+
     <node pkg="point_lio" exec="pointlio_mapping" name="laserMapping" output="screen">
         <param from="$(find-pkg-share point_lio)/config/unilidar_l1.yaml"/>
         <param name="use_imu_as_input" value="false"/>
@@ -44,11 +64,13 @@
         <param name="odom_child_frame_id" value="base_link"/>
         <param name="use_sim_time" value="true"/>
 
+        <remap from="/unilidar/cloud" to="/unilidar/cloud_filtered"/>
         <remap from="Laser_map" to="/lio/laser_map"/>
         <remap from="aft_mapped_to_init" to="/lio/odometry"/>
         <remap from="cloud_effected" to="/lio/cloud_effected"/>
         <remap from="cloud_registered" to="/lio/cloud_registered"/>
         <remap from="cloud_registered_body" to="/lio/cloud_registered_body"/>
+        <remap from="cloud" to="/unilidar/cloud_filtered"/>
         <remap from="path" to="/lio/trajectory"/>
     </node>
 

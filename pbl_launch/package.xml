@@ -17,6 +17,7 @@
   <depend>tf2_ros</depend>
   <depend>xacro</depend>
   <depend>point_lio</depend>
+  <depend>pbl_sensing</depend>
   <depend>rviz2</depend>
 
   <export>
