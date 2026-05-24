@@ -195,7 +195,7 @@ void pbl_pointcloud2_filter::publish_collision_markers()
     marker.color.b = 0.1f;
     marker.lifetime = rclcpp::Duration(0, 500000000);  // 0.5 seconds
 
-    const auto add_edge = [&](int a, int b) {
+    const auto add_edge = [&](std::size_t a, std::size_t b) {
       marker.points.push_back(corners[a]);
       marker.points.push_back(corners[b]);
     };

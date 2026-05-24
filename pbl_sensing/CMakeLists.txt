@@ -13,4 +13,9 @@ rclcpp_components_register_node(${PROJECT_NAME}
   EXECUTABLE pbl_pointcloud2_filter_node
 )
 
+rclcpp_components_register_node(${PROJECT_NAME}
+  PLUGIN "pbl_sensing::pbl_occupancy_grid_publisher"
+  EXECUTABLE pbl_occupancy_grid_publisher_node
+)
+
 ament_auto_package(USE_SCOPED_HEADER_INSTALL_DIR)
