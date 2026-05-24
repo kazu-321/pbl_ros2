@@ -149,7 +149,7 @@ class PcdPublisher(Node):
 def main():
     rclpy.init()
     pcd_path = sys.argv[1] if len(sys.argv) > 1 else "map.pcd"
-    topic = sys.argv[2] if len(sys.argv) > 2 else "/mapcloud"
+    topic = sys.argv[2] if len(sys.argv) > 2 else "/map_3d"
     frame_id = sys.argv[3] if len(sys.argv) > 3 else "map"
     node = PcdPublisher(pcd_path, topic, frame_id)
     rclpy.spin(node)

@@ -2,6 +2,7 @@
     <node_container pkg="rclcpp_components" exec="component_container" name="pbl_container" namespace="/">
         <composable_node pkg="pbl_localization" plugin="pbl_wheel_odometry::pbl_wheel_odometry" name="pbl_wheel_odometry">
             <param name="publish_tf" value="false"/>
+            <param name="use_sim_time" value="true"/>
         </composable_node>
         <composable_node pkg="robot_state_publisher" plugin="robot_state_publisher::RobotStatePublisher" name="robot_state_publisher" namespace="/">
             <param name="robot_description" value="$(command 'xacro $(find-pkg-share pbl_launch)/urdf/pbl.urdf.xacro')"/>
@@ -10,6 +11,21 @@
             <param name="publish_frequency" value="100.0"/>
         </composable_node>
     </node_container>
+
+    <node pkg="pbl_localization" exec="pbl_global_localization_node" name="pbl_global_localization" output="screen">
+        <param name="publish_tf" value="true"/>
+        <param name="map_frame_id" value="map"/>
+        <param name="odom_frame_id" value="odom"/>
+        <param name="base_frame_id" value="base_link"/>
+        <param name="map_cloud_topic" value="/map_3d"/>
+        <param name="source_cloud_topic" value="/lio/cloud_registered"/>
+        <param name="initial_pose_topic" value="/initialpose"/>
+        <param name="transform_tolerance_sec" value="1.0"/>
+        <param name="wait_initialpose" value="false"/>
+        <param name="initialpose_2d" value="0 0 0"/>
+        <param name="use_sim_time" value="true"/>
+        <param name="alignment_period_sec" value="1.0"/>
+    </node>
 
     <node pkg="point_lio" exec="pointlio_mapping" name="laserMapping" output="screen">
         <param from="$(find-pkg-share point_lio)/config/unilidar_l1.yaml"/>
@@ -35,9 +51,7 @@
         <remap from="path" to="/lio/trajectory"/>
     </node>
 
-    <node pkg="tf2_ros" exec="static_transform_publisher" name="static_transform_publisher" output="screen"
-        args="0 0 0 0 0 0 map odom"/>
-    
+
     <executable cmd="python3 $(find-pkg-share pbl_launch)/launch/publish_pcd.py $(find-pkg-share pbl_launch)/map/map.pcd"/>
 
     <!--     
