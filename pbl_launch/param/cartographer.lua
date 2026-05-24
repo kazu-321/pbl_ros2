@@ -145,7 +145,7 @@ options = {
     -- >       オドメトリメッセージ用のサンプリング比。
   fixed_frame_pose_sampling_ratio = 1.,
     -- >  [double] / ???
-  imu_sampling_ratio = 0.1,
+  imu_sampling_ratio = 1.,
     -- >  [double] / Fixed ratio sampling for IMU messages.
     -- >       IMU メッセージ用のサンプリング比。
   landmarks_sampling_ratio = 1.,
@@ -292,7 +292,7 @@ POSE_GRAPH.constraint_builder.ceres_scan_matcher_3d.translation_weight = 10.
   -- >  [double] / Not yet documented.
 POSE_GRAPH.constraint_builder.ceres_scan_matcher_3d.rotation_weight = 1.
   -- >  [double] / Not yet documented.
-POSE_GRAPH.constraint_builder.ceres_scan_matcher_3d.only_optimize_yaw = false
+POSE_GRAPH.constraint_builder.ceres_scan_matcher_3d.only_optimize_yaw = true
   -- >  [bool] / Whether only to allow changes to yaw, keeping roll/pitch constant.
   -- >       ロール/ピッチを一定にして、ヨーのみを変化させるかどうか。
 
@@ -408,16 +408,16 @@ TRAJECTORY_BUILDER_3D.num_accumulated_range_data = 1
   -- >  data to use for scan matching.
   -- >       スキャンマッチングに使用するための、歪みが無く結合された１個の範囲データに
   -- >       蓄積する範囲データの数。
-TRAJECTORY_BUILDER_3D.voxel_filter_size = 0.15
+TRAJECTORY_BUILDER_3D.voxel_filter_size = 0.3
   -- >  [float] / Voxel filter that gets applied to the range data immediately
   -- >  after cropping.
   -- >       切り出し直後の範囲データに適用されるボクセルフィルタ。
 
 
-TRAJECTORY_BUILDER_3D.high_resolution_adaptive_voxel_filter.max_length = 2.
+TRAJECTORY_BUILDER_3D.high_resolution_adaptive_voxel_filter.max_length = 1.
   -- >  [float] / ‘max_length’ of a voxel edge.
   -- >       ボクセルフィルタの 'max_length' 。
-TRAJECTORY_BUILDER_3D.high_resolution_adaptive_voxel_filter.min_num_points = 150
+TRAJECTORY_BUILDER_3D.high_resolution_adaptive_voxel_filter.min_num_points = 50
   -- >  [float] / If there are more points and not at least ‘min_num_points’
   -- >  remain, the voxel length is reduced trying to get this minimum number of points.
   -- >       点群数が多くありつつも、 'min_num_points' より少ない場合、この最小点数を得るために
@@ -528,7 +528,7 @@ TRAJECTORY_BUILDER_3D.imu_gravity_time_constant = 5.0
   -- >       する必要があります。
 
 
-TRAJECTORY_BUILDER_3D.pose_extrapolator.use_imu_based = false
+TRAJECTORY_BUILDER_3D.pose_extrapolator.use_imu_based = true
   -- >  [bool] / ??? 
 
 
@@ -553,9 +553,9 @@ TRAJECTORY_BUILDER_3D.pose_extrapolator.imu_based.imu_acceleration_weight = 1.
   -- >  [double ?] / ??? 
 TRAJECTORY_BUILDER_3D.pose_extrapolator.imu_based.imu_rotation_weight = 1.
   -- >  [double ?] / ??? 
-TRAJECTORY_BUILDER_3D.pose_extrapolator.imu_based.odometry_translation_weight = 1.
+TRAJECTORY_BUILDER_3D.pose_extrapolator.imu_based.odometry_translation_weight = 10.
   -- >  [double ?] / ??? 
-TRAJECTORY_BUILDER_3D.pose_extrapolator.imu_based.odometry_rotation_weight = 1.
+TRAJECTORY_BUILDER_3D.pose_extrapolator.imu_based.odometry_rotation_weight = 10.
   -- >  [double ?] / ??? 
 
 
@@ -580,7 +580,7 @@ TRAJECTORY_BUILDER_3D.submaps.low_resolution = 0.45
   -- >  [double] / Resolution of the ‘low_resolution’ version of the map in
   -- >  meters used for local SLAM only.
   -- >       Local SLAM のみに使用される 'low_resolution' 版のマップの解像度（メートル単位）。
-TRAJECTORY_BUILDER_3D.submaps.num_range_data = 30
+TRAJECTORY_BUILDER_3D.submaps.num_range_data = 150
   -- >  [int32] / Number of range data before adding a new submap. Each submap will
   -- >  get twice the number of range data inserted: First for initialization without
   -- >  being matched against, then while being matched.

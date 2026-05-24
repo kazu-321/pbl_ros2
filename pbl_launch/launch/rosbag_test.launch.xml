@@ -11,8 +11,35 @@
         </composable_node>
     </node_container>
 
+    <node pkg="point_lio" exec="pointlio_mapping" name="laserMapping" output="screen">
+        <param from="$(find-pkg-share point_lio)/config/unilidar_l1.yaml"/>
+        <param name="use_imu_as_input" value="false"/>
+        <param name="prop_at_freq_of_imu" value="true"/>
+        <param name="check_satu" value="true"/>
+        <param name="init_map_size" value="10"/>
+        <param name="point_filter_num" value="1"/>
+        <param name="space_down_sample" value="true"/>
+        <param name="filter_size_surf" value="0.1"/>
+        <param name="filter_size_map" value="0.1"/>
+        <param name="cube_side_length" value="1000.0"/>
+        <param name="runtime_pos_log_enable" value="false"/>
+        <param name="odom_header_frame_id" value="map"/>
+        <param name="odom_child_frame_id" value="base_link"/>
+        <param name="use_sim_time" value="true"/>
+
+        <remap from="Laser_map" to="/lio/laser_map"/>
+        <remap from="aft_mapped_to_init" to="/lio/odometry"/>
+        <remap from="cloud_effected" to="/lio/cloud_effected"/>
+        <remap from="cloud_registered" to="/lio/cloud_registered"/>
+        <remap from="cloud_registered_body" to="/lio/cloud_registered_body"/>
+        <remap from="path" to="/lio/trajectory"/>
+    </node>
+    
+    <executable cmd="python3 $(find-pkg-share pbl_launch)/launch/publish_pcd.py $(find-pkg-share pbl_launch)/map/map.pcd"/>
+
+    <!--     
     <node pkg="cartographer_ros" exec="cartographer_node" name="cartographer_node" output="screen"
-        args="-configuration_directory $(find-pkg-share pbl_launch)/param -configuration_basename cartographer.lua load_state_filename $(find-pkg-share pbl_launch)/map/map.pbstream">
+        args="-configuration_directory $(find-pkg-share pbl_launch)/param -configuration_basename cartographer.lua -load_state_filename $(find-pkg-share pbl_launch)/map/map.pbstream">
         <remap from="points2" to="/unilidar/cloud"/>
         <remap from="imu" to="/unilidar/imu"/>
         <remap from="odom" to="/odometry"/>
@@ -23,8 +50,18 @@
         args="-resolution 0.05 -publish_period_sec 1.0">
         <param name="use_sim_time" value="true"/>
     </node>
+    -->
 
+    <!--     
+    <node pkg="amcl_3d" exec="amcl_3d_node" name="amcl_3d" output="screen">
+        <param name="use_sim_time" value="true"/>
+        <remap from="odom" to="/odometry"/>
+        <remap from="imu" to="/unilidar/imu"/>
+        <remap from="pc2" to="/unilidar/cloud"/>
+        <remap from="map" to="/map_3d"/>
+        <param from="$(find-pkg-share pbl_launch)/param/amcl_3d.yaml"/>
+    </node>
+     -->
 
-    <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen"
-        args="-d $(find-pkg-share pbl_launch)/rviz/pbl.rviz"/>
+    <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen" args="-d $(find-pkg-share pbl_launch)/rviz/pbl.rviz"/>
 </launch>

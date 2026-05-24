@@ -1,0 +1,43 @@
+amcl_3d:
+  ros__parameters:
+    map_frame_id: map
+    base_link_frame_id: base_link
+    odom_frame_id: odom
+    publish_rate: 20.0
+    amcl_param:
+      augmented_mcl:
+        alpha_fast: 0.0
+        alpha_slow: 0.0
+        w_fast: 0.5
+        w_slow: 0.5
+        noise_x_var: 0.3
+        noise_y_var: 0.3
+        noise_z_var: 0.03
+        noise_roll_var: 0.02
+        noise_pitch_var: 0.02
+        noise_yaw_var: 0.1
+      init_pose:
+        initial_particle_num: 500
+      resample_timing:
+        ess_ratio_threshold: 0.5
+      kld_sampling:
+        min_particle_num: 300
+        max_particle_num: 5000
+        delta: 0.5
+        epsilon: 0.5
+        x_bin_width: 0.5
+        y_bin_width: 0.5
+        z_bin_width: 0.5
+      prediction_noise:
+        vel_scale_mean: 1.0
+        vel_scale_std: 0.0
+        vel_bias_mean: 0.0
+        vel_bias_std: 0.0
+        omega_scale_mean: 1.0
+        omega_scale_std: 0.0
+        omega_bias_mean: 0.0
+        omega_bias_std: 0.0
+      lidar_measurement:
+        random_sample_num: 300
+        max_dist: 1.0
+        sigma: 0.5

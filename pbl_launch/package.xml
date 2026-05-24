@@ -16,6 +16,8 @@
   <depend>robot_state_publisher</depend>
   <depend>tf2_ros</depend>
   <depend>xacro</depend>
+  <depend>point_lio</depend>
+  <depend>rviz2</depend>
 
   <export>
     <build_type>ament_cmake</build_type>
