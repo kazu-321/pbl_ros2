@@ -21,6 +21,7 @@
         <param name="source_cloud_topic" value="/lio/cloud_registered"/>
         <param name="initial_pose_topic" value="/initialpose"/>
         <param name="transform_tolerance_sec" value="1.0"/>
+        <param name="map_xy_margin_m" value="0.0"/>
         <param name="wait_initialpose" value="false"/>
         <param name="initialpose_2d" value="0 0 0"/>
         <param name="use_sim_time" value="true"/>

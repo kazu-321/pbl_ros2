@@ -4,6 +4,8 @@
   <xacro:property name="body_length" value="0.45"/>
   <xacro:property name="body_width" value="0.45"/>
   <xacro:property name="body_height" value="0.015"/>
+  <xacro:property name="pc_height" value="0.5"/>
+  <xacro:property name="pc_width" value="0.1"/>
   <xacro:property name="wheel_radius" value="0.05"/>
   <xacro:property name="wheel_width" value="0.01"/>
   <xacro:property name="wheel_separation" value="0.46"/>
@@ -13,6 +15,9 @@
 
   <material name="body_gray">
     <color rgba="0.85 0.85 0.85 1.0"/>
+  </material>
+  <material name="pc_black">
+    <color rgba="0.08 0.08 0.08 1.0"/>
   </material>
   <material name="wheel_black">
     <color rgba="0.08 0.08 0.08 1.0"/>
@@ -38,6 +43,21 @@
       </geometry>
     </collision>
   </link>
+
+  <link name="pc">
+    <visual>
+      <origin xyz="0 0 ${pc_height / 2.0}" rpy="0 0 0"/>
+      <geometry>
+        <box size="${pc_width} ${body_width} ${pc_height}"/>
+      </geometry>
+      <material name="pc_black"/>
+    </visual>
+  </link>
+  <joint name="base_link_to_pc" type="fixed">
+    <parent link="base_link"/>
+    <child link="pc"/>
+    <origin xyz="-0.04 0 ${wheel_radius + body_height}" rpy="0 0 0"/>
+  </joint>
 
   <link name="unilidar_lidar"/>
   <joint name="base_link_to_unilidar_lidar" type="fixed">

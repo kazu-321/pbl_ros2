@@ -45,6 +45,7 @@ private:
   static Eigen::Isometry3d pose_to_transform(const geometry_msgs::msg::Pose & pose);
   static std::optional<geometry_msgs::msg::PoseWithCovarianceStamped> parse_initialpose_2d(
     const std::string & initialpose_2d, const std::string & frame_id);
+  bool is_inside_map_xy(const Eigen::Vector3d & map_position) const;
 
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr map_cloud_sub_;
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr source_cloud_sub_;
@@ -76,6 +77,7 @@ private:
   int ndt_max_iterations_;
   double voxel_leaf_size_;
   double transform_tolerance_sec_;
+  double map_xy_margin_m_;
   bool publish_tf_;
   bool wait_initialpose_;
   std::string initialpose_2d_;
@@ -85,6 +87,9 @@ private:
   bool has_valid_alignment_ = false;
   bool force_initial_alignment_ = false;
   Eigen::Isometry3d last_map_to_odom_ = Eigen::Isometry3d::Identity();
+  Eigen::Vector2d map_xy_min_ = Eigen::Vector2d::Zero();
+  Eigen::Vector2d map_xy_max_ = Eigen::Vector2d::Zero();
+  bool has_map_xy_bounds_ = false;
 };
 
 }  // namespace pbl_localization

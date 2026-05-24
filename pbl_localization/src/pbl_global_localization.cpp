@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 #include "pcl/filters/voxel_grid.h"
 #include "pcl/registration/ndt.h"
@@ -31,6 +32,7 @@ pbl_global_localization::pbl_global_localization(const rclcpp::NodeOptions & opt
   ndt_max_iterations_(this->declare_parameter<int>("ndt_max_iterations", 35)),
   voxel_leaf_size_(this->declare_parameter<double>("voxel_leaf_size", 0.5)),
   transform_tolerance_sec_(this->declare_parameter<double>("transform_tolerance_sec", 0.3)),
+  map_xy_margin_m_(this->declare_parameter<double>("map_xy_margin_m", 0.0)),
   publish_tf_(this->declare_parameter<bool>("publish_tf", true)),
   wait_initialpose_(this->declare_parameter<bool>("wait_initialpose", true)),
   initialpose_2d_(this->declare_parameter<std::string>("initialpose_2d", "0 0 0"))
@@ -92,6 +94,7 @@ pbl_global_localization::pbl_global_localization(const rclcpp::NodeOptions & opt
   RCLCPP_INFO(this->get_logger(), "ndt_max_iterations: %d", ndt_max_iterations_);
   RCLCPP_INFO(this->get_logger(), "voxel_leaf_size: %.3f", voxel_leaf_size_);
   RCLCPP_INFO(this->get_logger(), "transform_tolerance_sec: %.3f", transform_tolerance_sec_);
+  RCLCPP_INFO(this->get_logger(), "map_xy_margin_m: %.3f", map_xy_margin_m_);
   RCLCPP_INFO(this->get_logger(), "wait_initialpose: %s", wait_initialpose_ ? "true" : "false");
   RCLCPP_INFO(this->get_logger(), "initialpose_2d: %s", initialpose_2d_.c_str());
   RCLCPP_INFO(this->get_logger(), "publish_tf: %s", publish_tf_ ? "true" : "false");
@@ -122,6 +125,17 @@ void pbl_global_localization::map_cloud_callback(const sensor_msgs::msg::PointCl
   std::lock_guard<std::mutex> lock(mutex_);
   *map_cloud_ = *cloud;
   has_map_cloud_ = !map_cloud_->empty();
+  if (has_map_cloud_) {
+    map_xy_min_ = Eigen::Vector2d(std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity());
+    map_xy_max_ = Eigen::Vector2d(-std::numeric_limits<double>::infinity(), -std::numeric_limits<double>::infinity());
+    for (const auto & point : map_cloud_->points) {
+      map_xy_min_.x() = std::min(map_xy_min_.x(), static_cast<double>(point.x));
+      map_xy_min_.y() = std::min(map_xy_min_.y(), static_cast<double>(point.y));
+      map_xy_max_.x() = std::max(map_xy_max_.x(), static_cast<double>(point.x));
+      map_xy_max_.y() = std::max(map_xy_max_.y(), static_cast<double>(point.y));
+    }
+    has_map_xy_bounds_ = true;
+  }
 }
 
 void pbl_global_localization::source_cloud_callback(
@@ -264,9 +278,24 @@ bool pbl_global_localization::try_align(const char * trigger_reason)
       return false;
     }
 
+    if (!is_inside_map_xy(initial_map_base.translation())) {
+      RCLCPP_WARN(
+        this->get_logger(),
+        "Initial pose candidate (x=%.3f, y=%.3f) is outside map xy bounds, skipping NDT.",
+        initial_map_base.translation().x(), initial_map_base.translation().y());
+      return false;
+    }
+
     initial_guess = initial_map_base * odom_base.inverse();
   } else {
     std::lock_guard<std::mutex> lock(mutex_);
+    if (!is_inside_map_xy(last_map_to_odom_.translation())) {
+      RCLCPP_WARN(
+        this->get_logger(),
+        "Last map->odom estimate (x=%.3f, y=%.3f) is outside map xy bounds, skipping NDT.",
+        last_map_to_odom_.translation().x(), last_map_to_odom_.translation().y());
+      return false;
+    }
     initial_guess = last_map_to_odom_;
   }
 
@@ -362,6 +391,21 @@ pbl_global_localization::parse_initialpose_2d(
   msg.pose.pose.orientation.z = q.z();
   msg.pose.pose.orientation.w = q.w();
   return msg;
+}
+
+bool pbl_global_localization::is_inside_map_xy(const Eigen::Vector3d & map_position) const
+{
+  if (!has_map_xy_bounds_) {
+    return true;
+  }
+
+  const double min_x = map_xy_min_.x() - map_xy_margin_m_;
+  const double min_y = map_xy_min_.y() - map_xy_margin_m_;
+  const double max_x = map_xy_max_.x() + map_xy_margin_m_;
+  const double max_y = map_xy_max_.y() + map_xy_margin_m_;
+
+  return map_position.x() >= min_x && map_position.x() <= max_x &&
+         map_position.y() >= min_y && map_position.y() <= max_y;
 }
 
 }  // namespace pbl_localization
