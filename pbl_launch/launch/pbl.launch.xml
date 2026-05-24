@@ -41,6 +41,7 @@
         <composable_node pkg="pbl_control" plugin="pbl_control::pbl_control" name="pbl_control">
         </composable_node>
         <composable_node pkg="pbl_localization" plugin="pbl_wheel_odometry::pbl_wheel_odometry" name="pbl_wheel_odometry">
+            <param name="publish_tf" value="false"/>
         </composable_node>
     </node_container>
 
@@ -49,19 +50,89 @@
         <param name="autorepeat_rate" value="1000.0"/>
     </node>
 
-    <!-- <node pkg="cartographer_ros" exec="cartographer_node" name="cartographer_node" output="screen"
-        args="-configuration_directory $(find-pkg-share pbl_launch)/param -configuration_basename cartographer.lua">
-        <remap from="points2" to="/unilidar/cloud"/>
-        <remap from="imu" to="/unilidar/imu"/>
-        <remap from="odom" to="/odometry"/>
-        <param name="use_sim_time" value="false"/>
+    <node pkg="pbl_localization" exec="pbl_global_localization_node" name="pbl_global_localization" output="screen">
+        <param name="publish_tf" value="true"/>
+        <param name="map_frame_id" value="map"/>
+        <param name="odom_frame_id" value="odom"/>
+        <param name="base_frame_id" value="base_link"/>
+        <param name="map_cloud_topic" value="/map_3d"/>
+        <param name="source_cloud_topic" value="/lio/cloud_registered"/>
+        <param name="initial_pose_topic" value="/initialpose"/>
+        <param name="transform_tolerance_sec" value="1.0"/>
+        <param name="map_xy_margin_m" value="0.0"/>
+        <param name="wait_initialpose" value="false"/>
+        <param name="initialpose_2d" value="0 0 0"/>
+        <param name="use_sim_time" value="true"/>
+        <param name="alignment_period_sec" value="1.0"/>
     </node>
 
-    <node pkg="cartographer_ros" exec="cartographer_occupancy_grid_node" name="cartographer_occupancy_grid_node" output="screen"
-        args="-resolution 0.05 -publish_period_sec 1.0">
-        <param name="use_sim_time" value="false"/>
-    </node> -->
+    <node pkg="pbl_sensing" exec="pbl_pointcloud2_filter_node" name="pbl_pointcloud2_filter" output="screen">
+        <param name="input_topic" value="/unilidar/cloud"/>
+        <param name="output_topic" value="/unilidar/cloud_filtered"/>
+        <param name="target_frame_id" value="base_link"/>
+        <param name="body_box_center_x" value="0.14"/>
+        <param name="body_box_center_y" value="0.0"/>
+        <param name="body_box_center_z" value="0.1"/>
+        <param name="body_box_size_x" value="0.45"/>
+        <param name="body_box_size_y" value="0.55"/>
+        <param name="body_box_size_z" value="0.15"/>
+        <param name="pc_box_center_x" value="-0.04"/>
+        <param name="pc_box_center_y" value="0.0"/>
+        <param name="pc_box_center_z" value="0.315"/>
+        <param name="pc_box_size_x" value="0.2"/>
+        <param name="pc_box_size_y" value="0.7"/>
+        <param name="pc_box_size_z" value="0.5"/>
+        <param name="transform_timeout_sec" value="0.1"/>
+        <param name="use_sim_time" value="true"/>
+    </node>
 
+    <node pkg="pbl_sensing" exec="pbl_occupancy_grid_publisher_node" name="pbl_occupancy_grid_publisher" output="screen">
+        <param name="map_topic" value="/map_3d"/>
+        <param name="cloud_topic" value="/lio/cloud_registered"/>
+        <param name="map_frame_id" value="map"/>
+        <param name="z_min" value="-0.2"/>
+        <param name="z_max" value="0.5"/>
+        <param name="grid_resolution" value="0.05"/>
+        <param name="occupied_count_full_score" value="10"/>
+        <param name="transform_timeout_sec" value="0.1"/>
+        <param name="use_sim_time" value="true"/>
+        <remap from="occupancy_grid" to="/map"/>
+    </node>
+
+    <node pkg="point_lio" exec="pointlio_mapping" name="laserMapping" output="screen">
+        <param from="$(find-pkg-share point_lio)/config/unilidar_l1.yaml"/>
+        <param name="use_imu_as_input" value="false"/>
+        <param name="prop_at_freq_of_imu" value="true"/>
+        <param name="check_satu" value="true"/>
+        <param name="init_map_size" value="10"/>
+        <param name="point_filter_num" value="1"/>
+        <param name="space_down_sample" value="true"/>
+        <param name="filter_size_surf" value="0.1"/>
+        <param name="filter_size_map" value="0.1"/>
+        <param name="cube_side_length" value="1000.0"/>
+        <param name="runtime_pos_log_enable" value="false"/>
+        <param name="odom_header_frame_id" value="odom"/>
+        <param name="odom_child_frame_id" value="base_link"/>
+        <param name="use_sim_time" value="true"/>
+
+        <remap from="Laser_map" to="/lio/laser_map"/>
+        <remap from="aft_mapped_to_init" to="/lio/odometry"/>
+        <remap from="cloud_effected" to="/lio/cloud_effected"/>
+        <remap from="cloud_registered" to="/lio/cloud_registered"/>
+        <remap from="cloud_registered_body" to="/lio/cloud_registered_body"/>
+        <remap from="/unilidar/cloud" to="/unilidar/cloud_filtered"/>
+        <remap from="path" to="/lio/trajectory"/>
+    </node>
+
+
+    <executable cmd="python3 $(find-pkg-share pbl_launch)/launch/publish_pcd.py $(find-pkg-share pbl_launch)/map/scans.pcd"/>
+
+    <include file="$(find-pkg-share pbl_launch)/launch/nav2.launch.py">
+        <arg name="use_sim_time" value="true"/>
+        <arg name="autostart" value="false"/>
+        <arg name="params_file" value="$(find-pkg-share pbl_launch)/param/nav2_rosbag.yaml"/>
+    </include>
+    
     <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen"
         args="-d $(find-pkg-share pbl_launch)/rviz/pbl.rviz"/>
 </launch>

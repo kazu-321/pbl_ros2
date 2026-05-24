@@ -112,6 +112,7 @@ void pbl_occupancy_grid_publisher::map_callback(const sensor_msgs::msg::PointClo
   used_map_cloud_ = build_used_map_cloud(map_in_frame);
   build_static_occupancy_from_map(map_in_frame);
   used_map_cloud_pub_->publish(used_map_cloud_);
+  occupancy_grid_.header.stamp = this->now();
   occupancy_pub_->publish(occupancy_grid_);
 
   RCLCPP_INFO(
@@ -146,16 +147,22 @@ void pbl_occupancy_grid_publisher::cloud_callback(
 void pbl_occupancy_grid_publisher::timer_callback()
 {
   std::lock_guard<std::mutex> lock(mutex_);
-  if (!map_initialized_ || !latest_cloud_ready_) {
+  if (!map_initialized_) {
     return;
   }
 
-  const auto buffered_cloud = take_cloud_buffer();
-  if (buffered_cloud.data.empty()) {
-    return;
+  if (latest_cloud_ready_) {
+    const auto buffered_cloud = take_cloud_buffer();
+    latest_cloud_ready_ = false;
+    if (!buffered_cloud.data.empty()) {
+      rebuild_occupancy_grid(buffered_cloud);
+    } else {
+      occupancy_grid_.data = static_occupancy_;
+    }
+  } else {
+    occupancy_grid_.data = static_occupancy_;
   }
 
-  rebuild_occupancy_grid(buffered_cloud);
   occupancy_grid_.header.stamp = this->now();
   occupancy_pub_->publish(occupancy_grid_);
 }

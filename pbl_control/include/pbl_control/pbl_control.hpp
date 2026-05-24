@@ -7,6 +7,7 @@
 #include "tf2_ros/transform_broadcaster.hpp"
 
 #include "geometry_msgs/msg/transform_stamped.hpp"
+#include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
@@ -27,6 +28,7 @@ class pbl_control : public rclcpp::Node {
     static constexpr std::size_t kLeftStickVerticalAxis   = 1;
     static constexpr std::size_t kPowerOnButtonIndex      = 1;
     static constexpr std::size_t kPowerOffButtonIndex     = 0;
+    static constexpr std::size_t kAutoModeButtonIndex     = 2;
     static constexpr const char *kRightWheelJointName     = "joint0";
     static constexpr const char *kLeftWheelJointName      = "joint1";
 
@@ -42,10 +44,22 @@ class pbl_control : public rclcpp::Node {
     double       max_linear_acceleration_m_s2_;
     double       max_yaw_acceleration_rad_s2_;
     bool         power_state_;
+    bool         auto_mode_state_;
+    bool         last_auto_button_state_;
     rclcpp::Time last_joy_time_;
-    rclcpp::Time last_joint_state_time_;
+    rclcpp::Time last_update_time_;
+    rclcpp::Time last_auto_command_time_;
+    double       target_linear_speed_m_s_;
+    double       target_yaw_speed_rad_s_;
+    double       auto_target_linear_speed_m_s_;
+    double       auto_target_yaw_speed_rad_s_;
+    double       control_rate_hz_;
+    double       auto_command_timeout_sec_;
 
     void joy_callback (const sensor_msgs::msg::Joy::SharedPtr msg);
+    void cmd_vel_smoothed_callback (const geometry_msgs::msg::Twist::SharedPtr msg);
+    void control_timer_callback ();
+    void update_motion (double dt);
     void publish_power_state ();
     void publish_joint_commands (double linear_speed_m_s, double yaw_speed_rad_s);
     void publish_command_velocity (double linear_speed_m_s, double yaw_speed_rad_s);
@@ -57,6 +71,8 @@ class pbl_control : public rclcpp::Node {
     rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr command_velocity_publisher_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr              power_publisher_;
     rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr         joy_subscriber_;
+    rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr     cmd_vel_smoothed_sub_;
+    rclcpp::TimerBase::SharedPtr                                    control_timer_;
 };
 }  // namespace pbl_control
 

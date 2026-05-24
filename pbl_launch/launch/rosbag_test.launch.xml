@@ -28,8 +28,6 @@
         <param name="alignment_period_sec" value="1.0"/>
     </node>
 
-    <!-- <node pkg="tf2_ros" exec="static_transform_publisher" name="base_to_laser" output="screen" args="0 0 0 0 0 0 map odom"/> -->
-
     <node pkg="pbl_sensing" exec="pbl_pointcloud2_filter_node" name="pbl_pointcloud2_filter" output="screen">
         <param name="input_topic" value="/unilidar/cloud"/>
         <param name="output_topic" value="/unilidar/cloud_filtered"/>
@@ -94,7 +92,7 @@
     <include file="$(find-pkg-share pbl_launch)/launch/nav2.launch.py">
         <arg name="use_sim_time" value="true"/>
         <arg name="autostart" value="false"/>
-        <arg name="params_file" value="$(find-pkg-share pbl_launch)/param/nav2_rosbag.yaml"/>
+        <arg name="params_file" value="$(find-pkg-share pbl_launch)/param/nav2.yaml"/>
     </include>
 
     <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen" args="-d $(find-pkg-share pbl_launch)/rviz/pbl.rviz"/>

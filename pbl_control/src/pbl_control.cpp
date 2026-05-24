@@ -14,6 +14,7 @@
 
 #include "pbl_control/pbl_control.hpp"
 
+#include <chrono>
 #include <algorithm>
 #include <cmath>
 
@@ -33,8 +34,17 @@ pbl_control::pbl_control (const rclcpp::NodeOptions &node_options)
       max_linear_acceleration_m_s2_ (0.0),
       max_yaw_acceleration_rad_s2_ (0.0),
       power_state_ (false),
+      auto_mode_state_ (false),
+      last_auto_button_state_ (false),
       last_joy_time_ (this->now ()),
-      last_joint_state_time_ (this->now ()) {
+      last_update_time_ (this->now ()),
+      last_auto_command_time_ (this->now ()),
+      target_linear_speed_m_s_ (0.0),
+      target_yaw_speed_rad_s_ (0.0),
+      auto_target_linear_speed_m_s_ (0.0),
+      auto_target_yaw_speed_rad_s_ (0.0),
+      control_rate_hz_ (this->declare_parameter<double> ("control_rate_hz", 50.0)),
+      auto_command_timeout_sec_ (this->declare_parameter<double> ("auto_command_timeout_sec", 0.5)) {
     if (chassis_acceleration_rate_s_ <= 0.0) {
         RCLCPP_WARN (this->get_logger (), "chassis_acceleration_rate_s must be positive. Falling back to 1.0 s.");
         chassis_acceleration_rate_s_ = 1.0;
@@ -57,6 +67,21 @@ pbl_control::pbl_control (const rclcpp::NodeOptions &node_options)
     command_velocity_publisher_   = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/command_velocity", rclcpp::QoS (10));
     power_publisher_              = this->create_publisher<std_msgs::msg::Bool> ("/power", rclcpp::QoS (10));
     joy_subscriber_               = this->create_subscription<sensor_msgs::msg::Joy> ("/controller/joy", rclcpp::QoS (10), std::bind (&pbl_control::joy_callback, this, std::placeholders::_1));
+    cmd_vel_smoothed_sub_         = this->create_subscription<geometry_msgs::msg::Twist> (
+        "/cmd_vel", rclcpp::QoS (10), std::bind (&pbl_control::cmd_vel_smoothed_callback, this, std::placeholders::_1));
+
+    if (control_rate_hz_ <= 0.0) {
+        RCLCPP_WARN (this->get_logger (), "control_rate_hz must be positive. Falling back to 50.0 Hz.");
+        control_rate_hz_ = 50.0;
+    }
+    if (auto_command_timeout_sec_ <= 0.0) {
+        RCLCPP_WARN (this->get_logger (), "auto_command_timeout_sec must be positive. Falling back to 0.5 s.");
+        auto_command_timeout_sec_ = 0.5;
+    }
+
+    const auto control_period = std::chrono::duration_cast<std::chrono::nanoseconds> (
+        std::chrono::duration<double> (1.0 / control_rate_hz_));
+    control_timer_ = this->create_wall_timer (control_period, std::bind (&pbl_control::control_timer_callback, this));
 
     publish_power_state ();
 
@@ -70,6 +95,8 @@ pbl_control::pbl_control (const rclcpp::NodeOptions &node_options)
     RCLCPP_INFO (this->get_logger (), "max_yaw_speed_rad_s: %.3f", max_yaw_speed_rad_s_);
     RCLCPP_INFO (this->get_logger (), "max_linear_acceleration_m_s2: %.3f", max_linear_acceleration_m_s2_);
     RCLCPP_INFO (this->get_logger (), "max_yaw_acceleration_rad_s2: %.3f", max_yaw_acceleration_rad_s2_);
+    RCLCPP_INFO (this->get_logger (), "control_rate_hz: %.3f", control_rate_hz_);
+    RCLCPP_INFO (this->get_logger (), "auto_command_timeout_sec: %.3f", auto_command_timeout_sec_);
 }
 
 double pbl_control::apply_deadzone (double value, double deadzone) {
@@ -109,14 +136,69 @@ void pbl_control::publish_command_velocity (double linear_speed_m_s, double yaw_
     twist_msg.header.stamp    = this->now ();
     twist_msg.header.frame_id = "base_link";
     twist_msg.twist.linear.x  = linear_speed_m_s;
-    twist_msg.twist.linear.y  = -yaw_speed_rad_s * wheel_axle_x_;
+    twist_msg.twist.linear.y  = 0.0;
     twist_msg.twist.angular.z = yaw_speed_rad_s;
     command_velocity_publisher_->publish (twist_msg);
 }
 
+void pbl_control::cmd_vel_smoothed_callback (const geometry_msgs::msg::Twist::SharedPtr msg) {
+    auto_target_linear_speed_m_s_ = msg->linear.x;
+    auto_target_yaw_speed_rad_s_  = msg->angular.z;
+    last_auto_command_time_       = this->now ();
+}
+
+void pbl_control::update_motion (double dt) {
+    const double max_linear_delta = max_linear_acceleration_m_s2_ * dt;
+    const double max_yaw_delta     = max_yaw_acceleration_rad_s2_ * dt;
+
+    if (target_linear_speed_m_s_ > current_linear_speed_m_s_) {
+        current_linear_speed_m_s_ = std::min (current_linear_speed_m_s_ + max_linear_delta, target_linear_speed_m_s_);
+    } else {
+        current_linear_speed_m_s_ = std::max (current_linear_speed_m_s_ - max_linear_delta, target_linear_speed_m_s_);
+    }
+
+    if (target_yaw_speed_rad_s_ > current_yaw_speed_rad_s_) {
+        current_yaw_speed_rad_s_ = std::min (current_yaw_speed_rad_s_ + max_yaw_delta, target_yaw_speed_rad_s_);
+    } else {
+        current_yaw_speed_rad_s_ = std::max (current_yaw_speed_rad_s_ - max_yaw_delta, target_yaw_speed_rad_s_);
+    }
+}
+
+void pbl_control::control_timer_callback () {
+    const rclcpp::Time now = this->now ();
+    const double       dt  = std::max ((now - last_update_time_).seconds (), 0.0);
+    last_update_time_      = now;
+
+    if (!power_state_) {
+        target_linear_speed_m_s_ = 0.0;
+        target_yaw_speed_rad_s_  = 0.0;
+        current_linear_speed_m_s_ = 0.0;
+        current_yaw_speed_rad_s_  = 0.0;
+        publish_power_state ();
+        publish_joint_commands (0.0, 0.0);
+        publish_command_velocity (0.0, 0.0);
+        return;
+    }
+
+    if (auto_mode_state_) {
+        const double auto_age_sec = std::max ((now - last_auto_command_time_).seconds (), 0.0);
+        if (auto_age_sec <= auto_command_timeout_sec_) {
+            target_linear_speed_m_s_ = auto_target_linear_speed_m_s_;
+            target_yaw_speed_rad_s_  = auto_target_yaw_speed_rad_s_;
+        } else {
+            target_linear_speed_m_s_ = 0.0;
+            target_yaw_speed_rad_s_  = 0.0;
+        }
+    }
+
+    update_motion (dt);
+    publish_power_state ();
+    publish_joint_commands (current_linear_speed_m_s_, current_yaw_speed_rad_s_);
+    publish_command_velocity (current_linear_speed_m_s_, current_yaw_speed_rad_s_);
+}
+
 void pbl_control::joy_callback (const sensor_msgs::msg::Joy::SharedPtr msg) {
     const rclcpp::Time now = this->now ();
-    const double       dt  = std::max ((now - last_joy_time_).seconds (), 0.0);
     last_joy_time_         = now;
 
     const auto axis_or_zero = [msg] (std::size_t index) {
@@ -136,42 +218,36 @@ void pbl_control::joy_callback (const sensor_msgs::msg::Joy::SharedPtr msg) {
     const double raw_turn_axis    = apply_deadzone (axis_or_zero (kLeftStickHorizontalAxis), 0.1);
     const double raw_forward_axis = apply_deadzone (axis_or_zero (kLeftStickVerticalAxis), 0.1);
 
-    const double target_linear_speed = raw_forward_axis * max_linear_speed_m_s_;
-    const double target_yaw_speed    = raw_turn_axis * max_yaw_speed_rad_s_;
-    const double max_linear_delta    = max_linear_acceleration_m_s2_ * dt;
-    const double max_yaw_delta       = max_yaw_acceleration_rad_s2_ * dt;
-
-    if (target_linear_speed > current_linear_speed_m_s_) {
-        current_linear_speed_m_s_ = std::min (current_linear_speed_m_s_ + max_linear_delta, target_linear_speed);
-    } else {
-        current_linear_speed_m_s_ = std::max (current_linear_speed_m_s_ - max_linear_delta, target_linear_speed);
-    }
-
-    if (target_yaw_speed > current_yaw_speed_rad_s_) {
-        current_yaw_speed_rad_s_ = std::min (current_yaw_speed_rad_s_ + max_yaw_delta, target_yaw_speed);
-    } else {
-        current_yaw_speed_rad_s_ = std::max (current_yaw_speed_rad_s_ - max_yaw_delta, target_yaw_speed);
-    }
-
     if (button_or_zero (kPowerOnButtonIndex) == 1) {
         power_state_ = true;
     }
     if (button_or_zero (kPowerOffButtonIndex) == 1) {
         power_state_ = false;
     }
+    const bool auto_button_pressed = button_or_zero (kAutoModeButtonIndex) == 1;
+    if (auto_button_pressed && !last_auto_button_state_) {
+        auto_mode_state_ = !auto_mode_state_;
+        if (!auto_mode_state_) {
+            target_linear_speed_m_s_ = 0.0;
+            target_yaw_speed_rad_s_  = 0.0;
+        }
+    }
+    last_auto_button_state_ = auto_button_pressed;
 
     if (!power_state_) {
+        auto_mode_state_ = false;
+        last_auto_button_state_ = false;
+        target_linear_speed_m_s_ = 0.0;
+        target_yaw_speed_rad_s_  = 0.0;
         current_linear_speed_m_s_ = 0.0;
         current_yaw_speed_rad_s_  = 0.0;
-        publish_power_state ();
-        publish_joint_commands (0.0, 0.0);
-        publish_command_velocity (0.0, 0.0);
         return;
     }
 
-    publish_power_state ();
-    publish_joint_commands (current_linear_speed_m_s_, current_yaw_speed_rad_s_);
-    publish_command_velocity (current_linear_speed_m_s_, current_yaw_speed_rad_s_);
+    if (!auto_mode_state_) {
+        target_linear_speed_m_s_ = raw_forward_axis * max_linear_speed_m_s_;
+        target_yaw_speed_rad_s_  = raw_turn_axis * max_yaw_speed_rad_s_;
+    }
 }
 
 }  // namespace pbl_control
