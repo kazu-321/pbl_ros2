@@ -6,6 +6,7 @@ import struct
 import sys
 
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import PointCloud2, PointField
@@ -152,9 +153,14 @@ def main():
     topic = sys.argv[2] if len(sys.argv) > 2 else "/map_3d"
     frame_id = sys.argv[3] if len(sys.argv) > 3 else "map"
     node = PcdPublisher(pcd_path, topic, frame_id)
-    rclpy.spin(node)
-    node.destroy_node()
-    rclpy.shutdown()
+    try:
+        rclpy.spin(node)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        node.destroy_node()
+        if rclpy.ok():
+            rclpy.shutdown()
 
 
 if __name__ == "__main__":

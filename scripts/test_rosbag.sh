@@ -7,15 +7,17 @@ if [ $# -lt 1 ]; then
 fi
 
 BAG_PATH=$1
+LAUNCH_PID=""
 
 cleanup() {
-    if [[ -n "${LAUNCH_PID:-}" ]] && kill -0 "$LAUNCH_PID" 2>/dev/null; then
+    if [[ -n "$LAUNCH_PID" ]] && kill -0 "$LAUNCH_PID" 2>/dev/null; then
         kill -INT "$LAUNCH_PID" 2>/dev/null || true
         wait "$LAUNCH_PID" 2>/dev/null || true
     fi
 }
 
-trap cleanup EXIT INT TERM
+trap cleanup EXIT
+trap 'cleanup; exit 130' INT TERM
 
 ros2 launch pbl_launch rosbag_test.launch.xml &
 LAUNCH_PID=$!
@@ -28,4 +30,7 @@ ros2 bag play "$BAG_PATH" \
         /joint_states \
         /unilidar/cloud \
         /unilidar/imu \
-    -r 1.5
+    -r 1.0
+status=$?
+cleanup
+exit "$status"

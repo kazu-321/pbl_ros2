@@ -28,6 +28,8 @@
         <param name="alignment_period_sec" value="1.0"/>
     </node>
 
+    <!-- <node pkg="tf2_ros" exec="static_transform_publisher" name="base_to_laser" output="screen" args="0 0 0 0 0 0 map odom"/> -->
+
     <node pkg="pbl_sensing" exec="pbl_pointcloud2_filter_node" name="pbl_pointcloud2_filter" output="screen">
         <param name="input_topic" value="/unilidar/cloud"/>
         <param name="output_topic" value="/unilidar/cloud_filtered"/>
@@ -58,6 +60,7 @@
         <param name="occupied_count_full_score" value="10"/>
         <param name="transform_timeout_sec" value="0.1"/>
         <param name="use_sim_time" value="true"/>
+        <remap from="occupancy_grid" to="/map"/>
     </node>
 
     <node pkg="point_lio" exec="pointlio_mapping" name="laserMapping" output="screen">
@@ -88,6 +91,15 @@
 
     <executable cmd="python3 $(find-pkg-share pbl_launch)/launch/publish_pcd.py $(find-pkg-share pbl_launch)/map/scans.pcd"/>
 
+    <include file="$(find-pkg-share pbl_launch)/launch/nav2.launch.py">
+        <arg name="use_sim_time" value="true"/>
+        <arg name="autostart" value="false"/>
+        <arg name="params_file" value="$(find-pkg-share pbl_launch)/param/nav2_rosbag.yaml"/>
+    </include>
+
+    <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen" args="-d $(find-pkg-share pbl_launch)/rviz/pbl.rviz"/>
+
+
     <!--     
     <node pkg="cartographer_ros" exec="cartographer_node" name="cartographer_node" output="screen"
         args="-configuration_directory $(find-pkg-share pbl_launch)/param -configuration_basename cartographer.lua -load_state_filename $(find-pkg-share pbl_launch)/map/map.pbstream">
@@ -114,5 +126,4 @@
     </node>
      -->
 
-    <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen" args="-d $(find-pkg-share pbl_launch)/rviz/pbl.rviz"/>
 </launch>

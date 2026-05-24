@@ -50,7 +50,7 @@ pbl_global_localization::pbl_global_localization(const rclcpp::NodeOptions & opt
     initial_pose_topic_, rclcpp::QoS(10).reliable(),
     std::bind(&pbl_global_localization::initial_pose_callback, this, std::placeholders::_1));
 
-  alignment_timer_ = this->create_wall_timer(
+  alignment_timer_ = this->create_timer(
     std::chrono::duration<double>(alignment_period_sec_),
     std::bind(&pbl_global_localization::alignment_timer_callback, this));
 
