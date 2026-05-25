@@ -1,4 +1,6 @@
 <launch>
+    <let name="map_dir" value="$(env PBL_MAP_DIR $(find-pkg-share pbl_launch)/map)"/>
+
     <node_container pkg="rclcpp_components" exec="component_container" name="pbl_container" namespace="/">
         <composable_node pkg="pbl_localization" plugin="pbl_wheel_odometry::pbl_wheel_odometry" name="pbl_wheel_odometry">
             <param name="publish_tf" value="false"/>
@@ -76,6 +78,7 @@
         <param name="odom_header_frame_id" value="odom"/>
         <param name="odom_child_frame_id" value="base_link"/>
         <param name="use_sim_time" value="true"/>
+        <param name="pcd_save.path" value="$(var map_dir)/latest_map.pcd"/>
 
         <remap from="Laser_map" to="/lio/laser_map"/>
         <remap from="aft_mapped_to_init" to="/lio/odometry"/>
@@ -87,7 +90,7 @@
     </node>
 
 
-    <executable cmd="python3 $(find-pkg-share pbl_launch)/launch/publish_pcd.py $(find-pkg-share pbl_launch)/map/scans.pcd"/>
+    <executable cmd="python3 $(find-pkg-share pbl_launch)/launch/publish_pcd.py $(var map_dir)/map.pcd"/>
 
     <include file="$(find-pkg-share pbl_launch)/launch/nav2.launch.py">
         <arg name="use_sim_time" value="true"/>

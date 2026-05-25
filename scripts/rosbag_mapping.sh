@@ -19,7 +19,7 @@ cleanup() {
 trap cleanup EXIT
 trap 'cleanup; exit 130' INT TERM
 
-ros2 launch pbl_launch rosbag_test.launch.xml &
+ros2 launch pbl_launch rosbag_mapping.launch.xml &
 LAUNCH_PID=$!
 
 sleep 1
