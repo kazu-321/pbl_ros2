@@ -1,9 +1,6 @@
 <launch>
-    <arg name="use_teleop" default="true"/>
-    <arg name="use_rviz" default="true"/>
     <arg name="map_pcd" default="$(find-pkg-share pbl_launch)/map/scans.pcd"/>
     <arg name="nav2_params_file" default="$(find-pkg-share pbl_launch)/param/nav2.yaml"/>
-    <arg name="odom_topic" default="/odometry"/>
 
     <node pkg="tf2_ros" exec="static_transform_publisher" name="map_to_odom" output="screen"
         args="0 0 0 0 0 0 map odom"/>
@@ -46,25 +43,20 @@
         <param name="command_timeout_sec" value="0.5"/>
     </node>
 
-    <group if="$(var use_teleop)">
-        <node pkg="joy" exec="game_controller_node" name="joy" output="screen" namespace="/controller">
-            <param name="deadzone" value="0.1"/>
-            <param name="autorepeat_rate" value="1000.0"/>
-        </node>
+    <node pkg="joy" exec="game_controller_node" name="joy" output="screen" namespace="/controller">
+        <param name="deadzone" value="0.1"/>
+        <param name="autorepeat_rate" value="1000.0"/>
+    </node>
 
-        <node pkg="pbl_control" exec="pbl_control_node" name="pbl_control" output="screen">
-            <param from="$(find-pkg-share pbl_launch)/param/control.yaml"/>
-        </node>
-    </group>
+    <node pkg="pbl_control" exec="pbl_control_node" name="pbl_control" output="screen">
+        <param from="$(find-pkg-share pbl_launch)/param/control.yaml"/>
+    </node>
 
     <include file="$(find-pkg-share pbl_launch)/launch/nav2.launch.py">
         <arg name="use_sim_time" value="false"/>
         <arg name="autostart" value="true"/>
         <arg name="params_file" value="$(var nav2_params_file)"/>
-        <arg name="odom_topic" value="$(var odom_topic)"/>
     </include>
 
-    <group if="$(var use_rviz)">
-        <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen" args="-d $(find-pkg-share pbl_launch)/rviz/pbl.rviz"/>
-    </group>
+    <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen" args="-d $(find-pkg-share pbl_launch)/rviz/pbl.rviz"/>
 </launch>
