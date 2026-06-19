@@ -39,6 +39,7 @@ private:
   void source_cloud_callback(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
   void initial_pose_callback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
   void alignment_timer_callback();
+  void publish_timer_callback();
   bool try_align(const char * trigger_reason);
   void publish_map_to_odom(const Eigen::Isometry3d & map_to_odom, const rclcpp::Time & stamp);
 
@@ -52,6 +53,7 @@ private:
   rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
     initial_pose_sub_;
   rclcpp::TimerBase::SharedPtr alignment_timer_;
+  rclcpp::TimerBase::SharedPtr publish_timer_;
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;

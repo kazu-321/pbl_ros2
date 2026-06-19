@@ -35,6 +35,9 @@ pbl_pointcloud2_filter::pbl_pointcloud2_filter(const rclcpp::NodeOptions & optio
   tf_listener_(tf_buffer_, this, true),
   input_topic_(this->declare_parameter<std::string>("input_topic", "/unilidar/cloud")),
   output_topic_(this->declare_parameter<std::string>("output_topic", "/unilidar/cloud_filtered")),
+  output_topic_transformed_(
+    this->declare_parameter<std::string>(
+      "output_topic_transformed", "/unilidar/cloud_filtered_transformed")),
   target_frame_id_(this->declare_parameter<std::string>("target_frame_id", "base_link")),
   transform_timeout_sec_(this->declare_parameter<double>("transform_timeout_sec", 0.1)) {
   tf_buffer_.setUsingDedicatedThread(true);
@@ -73,6 +76,8 @@ pbl_pointcloud2_filter::pbl_pointcloud2_filter(const rclcpp::NodeOptions & optio
   const auto cloud_qos = rclcpp::QoS(10);
   filtered_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
     output_topic_, cloud_qos);
+  filtered_cloud_transformed_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
+    output_topic_transformed_, cloud_qos);
   collision_marker_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
     "collision_boxes", rclcpp::QoS(1).reliable());
   cloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
@@ -85,6 +90,9 @@ pbl_pointcloud2_filter::pbl_pointcloud2_filter(const rclcpp::NodeOptions & optio
   RCLCPP_INFO(this->get_logger(), "pbl_pointcloud2_filter initialized");
   RCLCPP_INFO(this->get_logger(), "input_topic: %s", input_topic_.c_str());
   RCLCPP_INFO(this->get_logger(), "output_topic: %s", output_topic_.c_str());
+  RCLCPP_INFO(
+    this->get_logger(), "output_topic_transformed: %s",
+    output_topic_transformed_.c_str());
   RCLCPP_INFO(this->get_logger(), "target_frame_id: %s", target_frame_id_.c_str());
   RCLCPP_INFO(this->get_logger(), "transform_timeout_sec: %.3f", transform_timeout_sec_);
   for (const auto & box : collision_boxes_) {
@@ -129,13 +137,18 @@ void pbl_pointcloud2_filter::pointcloud_callback(const sensor_msgs::msg::PointCl
   }
 
   auto filtered_cloud = filter_self_points(cloud_in_target);
+  filtered_cloud.header.stamp = msg->header.stamp;
+  filtered_cloud_transformed_pub_->publish(filtered_cloud);
 
   if (original_frame_id != target_frame_id_) {
     try {
       const auto transform_back = tf_buffer_.lookupTransform(
         original_frame_id, target_frame_id_, tf2::TimePointZero,
         tf2::durationFromSec(transform_timeout_sec_));
-      tf2::doTransform(filtered_cloud, filtered_cloud, transform_back);
+      sensor_msgs::msg::PointCloud2 filtered_cloud_original;
+      tf2::doTransform(filtered_cloud, filtered_cloud_original, transform_back);
+      filtered_cloud_original.header.stamp = msg->header.stamp;
+      filtered_cloud_pub_->publish(filtered_cloud_original);
     } catch (const tf2::TransformException & ex) {
       RCLCPP_WARN_THROTTLE(
         this->get_logger(), *this->get_clock(), 3000,
@@ -143,11 +156,9 @@ void pbl_pointcloud2_filter::pointcloud_callback(const sensor_msgs::msg::PointCl
         target_frame_id_.c_str(), original_frame_id.c_str(), ex.what());
       return;
     }
+  } else {
+    filtered_cloud_pub_->publish(filtered_cloud);
   }
-
-  filtered_cloud.header.frame_id = original_frame_id;
-  filtered_cloud.header.stamp = msg->header.stamp;
-  filtered_cloud_pub_->publish(filtered_cloud);
 }
 
 void pbl_pointcloud2_filter::publish_collision_markers()

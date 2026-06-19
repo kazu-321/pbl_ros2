@@ -56,6 +56,9 @@ pbl_global_localization::pbl_global_localization(const rclcpp::NodeOptions & opt
 
   if (publish_tf_) {
     tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
+    publish_timer_ = this->create_wall_timer(
+      std::chrono::duration<double>(0.01),
+      std::bind(&pbl_global_localization::publish_timer_callback, this));
   }
 
   if (!wait_initialpose_) {
@@ -200,6 +203,24 @@ void pbl_global_localization::alignment_timer_callback()
   try_align("timer");
 }
 
+void pbl_global_localization::publish_timer_callback()
+{
+  if (!publish_tf_ || !tf_broadcaster_) {
+    return;
+  }
+
+  Eigen::Isometry3d map_to_odom = Eigen::Isometry3d::Identity();
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!has_valid_alignment_) {
+      return;
+    }
+    map_to_odom = last_map_to_odom_;
+  }
+
+  publish_map_to_odom(map_to_odom, this->now());
+}
+
 bool pbl_global_localization::try_align(const char * trigger_reason)
 {
   geometry_msgs::msg::PoseWithCovarianceStamped initial_pose;
@@ -327,7 +348,7 @@ bool pbl_global_localization::try_align(const char * trigger_reason)
     force_initial_alignment_ = false;
   }
 
-  publish_map_to_odom(map_to_odom, reference_stamp);
+  publish_map_to_odom(map_to_odom, this->now());
 
   RCLCPP_INFO(
     this->get_logger(), "Aligned map->odom on %s trigger. fitness score: %.6f", trigger_reason,
@@ -343,8 +364,7 @@ void pbl_global_localization::publish_map_to_odom(
   }
 
   geometry_msgs::msg::TransformStamped tf_msg = tf2::eigenToTransform(map_to_odom);
-  tf_msg.header.stamp = stamp + rclcpp::Duration::from_seconds(
-                                     alignment_period_sec_ + transform_tolerance_sec_);
+  tf_msg.header.stamp = stamp + rclcpp::Duration::from_seconds(transform_tolerance_sec_);
   tf_msg.header.frame_id = map_frame_id_;
   tf_msg.child_frame_id = odom_frame_id_;
   tf_broadcaster_->sendTransform(tf_msg);

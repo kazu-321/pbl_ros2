@@ -1,7 +1,7 @@
 <launch>
     <let name="map_dir" value="$(env PBL_MAP_DIR $(find-pkg-share pbl_launch)/map)"/>
 
-    <include file="$(find-pkg-share pbl_launch)/launch/launch_lidar.py"/>
+    <include file="$(find-pkg-share pbl_launch)/launch/lidar.launch.py"/>
 
     <node_container pkg="rclcpp_components" exec="component_container" name="can_container" namespace="/">
         <composable_node pkg="natto_canable" plugin="canable::canable" name="canable">
@@ -40,6 +40,7 @@
 
     <node_container pkg="rclcpp_components" exec="component_container" name="pbl_container" namespace="/">
         <composable_node pkg="pbl_control" plugin="pbl_control::pbl_control" name="pbl_control">
+            <param name="chassis_acceleration_rate_s" value="0.5"/>
         </composable_node>
         <composable_node pkg="pbl_localization" plugin="pbl_wheel_odometry::pbl_wheel_odometry" name="pbl_wheel_odometry">
             <param name="publish_tf" value="false"/>
@@ -63,13 +64,14 @@
         <param name="map_xy_margin_m" value="0.0"/>
         <param name="wait_initialpose" value="false"/>
         <param name="initialpose_2d" value="0 0 0"/>
-        <param name="use_sim_time" value="true"/>
+        <param name="use_sim_time" value="false"/>
         <param name="alignment_period_sec" value="1.0"/>
     </node>
 
     <node pkg="pbl_sensing" exec="pbl_pointcloud2_filter_node" name="pbl_pointcloud2_filter" output="screen">
         <param name="input_topic" value="/unilidar/cloud"/>
         <param name="output_topic" value="/unilidar/cloud_filtered"/>
+        <param name="output_topic_transformed" value="/unilidar/cloud_filtered_transformed"/>
         <param name="target_frame_id" value="base_link"/>
         <param name="body_box_center_x" value="0.14"/>
         <param name="body_box_center_y" value="0.0"/>
@@ -84,7 +86,7 @@
         <param name="pc_box_size_y" value="0.7"/>
         <param name="pc_box_size_z" value="0.5"/>
         <param name="transform_timeout_sec" value="0.1"/>
-        <param name="use_sim_time" value="true"/>
+        <param name="use_sim_time" value="false"/>
     </node>
 
     <node pkg="pbl_sensing" exec="pbl_occupancy_grid_publisher_node" name="pbl_occupancy_grid_publisher" output="screen">
@@ -96,7 +98,7 @@
         <param name="grid_resolution" value="0.05"/>
         <param name="occupied_count_full_score" value="10"/>
         <param name="transform_timeout_sec" value="0.1"/>
-        <param name="use_sim_time" value="true"/>
+        <param name="use_sim_time" value="false"/>
         <remap from="occupancy_grid" to="/map"/>
     </node>
 
@@ -114,15 +116,14 @@
         <param name="runtime_pos_log_enable" value="false"/>
         <param name="odom_header_frame_id" value="odom"/>
         <param name="odom_child_frame_id" value="base_link"/>
-        <param name="use_sim_time" value="true"/>
+        <param name="use_sim_time" value="false"/>
         <param name="pcd_save.path" value="$(var map_dir)/latest_map.pcd"/>
 
         <remap from="Laser_map" to="/lio/laser_map"/>
         <remap from="aft_mapped_to_init" to="/lio/odometry"/>
         <remap from="cloud_effected" to="/lio/cloud_effected"/>
         <remap from="cloud_registered" to="/lio/cloud_registered"/>
-        <remap from="cloud_registered_body" to="/lio/cloud_registered_body"/>
-        <remap from="/unilidar/cloud" to="/unilidar/cloud_filtered"/>
+        <remap from="/unilidar/cloud" to="/unilidar/cloud_filtered_transformed"/>
         <remap from="path" to="/lio/trajectory"/>
     </node>
 
@@ -130,9 +131,9 @@
     <executable cmd="python3 $(find-pkg-share pbl_launch)/launch/publish_pcd.py $(var map_dir)/map.pcd"/>
 
     <include file="$(find-pkg-share pbl_launch)/launch/nav2.launch.py">
-        <arg name="use_sim_time" value="true"/>
+        <arg name="use_sim_time" value="false"/>
         <arg name="autostart" value="false"/>
-        <arg name="params_file" value="$(find-pkg-share pbl_launch)/param/nav2_rosbag.yaml"/>
+        <arg name="params_file" value="$(find-pkg-share pbl_launch)/param/nav2.yaml"/>
     </include>
     
     <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen"

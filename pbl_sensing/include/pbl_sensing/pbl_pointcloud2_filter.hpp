@@ -41,6 +41,7 @@ private:
 
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cloud_sub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr filtered_cloud_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr filtered_cloud_transformed_pub_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr collision_marker_pub_;
   rclcpp::TimerBase::SharedPtr collision_marker_timer_;
   tf2_ros::Buffer tf_buffer_;
@@ -48,6 +49,7 @@ private:
 
   std::string input_topic_;
   std::string output_topic_;
+  std::string output_topic_transformed_;
   std::string target_frame_id_;
   double transform_timeout_sec_;
   std::vector<CollisionBox> collision_boxes_;
