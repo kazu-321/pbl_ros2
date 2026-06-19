@@ -93,7 +93,7 @@
         <param name="map_topic" value="/map_3d"/>
         <param name="cloud_topic" value="/lio/cloud_registered"/>
         <param name="map_frame_id" value="map"/>
-        <param name="z_min" value="-0.2"/>
+        <param name="z_min" value="0.0"/>
         <param name="z_max" value="0.5"/>
         <param name="grid_resolution" value="0.05"/>
         <param name="occupied_count_full_score" value="10"/>

@@ -11,7 +11,7 @@
         <param name="map_topic" value="/map_3d"/>
         <param name="cloud_topic" value="/unilidar/cloud_filtered"/>
         <param name="map_frame_id" value="map"/>
-        <param name="z_min" value="-0.2"/>
+        <param name="z_min" value="0.0"/>
         <param name="z_max" value="0.5"/>
         <param name="grid_resolution" value="0.05"/>
         <param name="occupied_count_full_score" value="10"/>
@@ -38,7 +38,7 @@
         <param name="wheel_radius" value="0.05"/>
         <param name="wheel_separation" value="0.46"/>
         <param name="max_wheel_speed_rad_s" value="30.0"/>
-        <param name="wheel_acceleration_rad_s2" value="30.0"/>
+        <param name="wheel_acceleration_rad_s2" value="100.0"/>
         <param name="publish_rate_hz" value="100.0"/>
         <param name="command_timeout_sec" value="0.5"/>
     </node>
@@ -49,7 +49,7 @@
     </node>
 
     <node pkg="pbl_control" exec="pbl_control_node" name="pbl_control" output="screen">
-        <param from="$(find-pkg-share pbl_launch)/param/control.yaml"/>
+        <param name="chassis_acceleration_rate_s" value="0.5"/>
     </node>
 
     <include file="$(find-pkg-share pbl_launch)/launch/nav2.launch.py">

@@ -106,6 +106,60 @@ smoother_server:
       enforce_path_inversion: false
       do_refinement: true
 
+behavior_server:
+  ros__parameters:
+    local_costmap_topic: local_costmap/costmap_raw
+    global_costmap_topic: global_costmap/costmap_raw
+    local_footprint_topic: local_costmap/published_footprint
+    global_footprint_topic: global_costmap/published_footprint
+    cycle_frequency: 10.0
+    behavior_plugins: ["spin", "backup", "drive_on_heading", "wait"]
+    spin:
+      plugin: "nav2_behaviors::Spin"
+    backup:
+      plugin: "nav2_behaviors::BackUp"
+      acceleration_limit: 2.5
+      deceleration_limit: -2.5
+      minimum_speed: 0.10
+    drive_on_heading:
+      plugin: "nav2_behaviors::DriveOnHeading"
+      acceleration_limit: 2.5
+      deceleration_limit: -2.5
+      minimum_speed: 0.10
+    wait:
+      plugin: "nav2_behaviors::Wait"
+    global_frame: map
+    robot_base_frame: base_link
+    local_frame: odom
+    transform_tolerance: 0.2
+    simulate_ahead_time: 2.0
+    max_rotational_vel: 3.0
+    min_rotational_vel: 0.0
+    rotational_acc_lim: 6.0
+
+bt_navigator:
+  ros__parameters:
+    global_frame: map
+    robot_base_frame: base_link
+    odom_topic: /lio/odometry
+    bt_loop_duration: 10
+    filter_duration: 0.3
+    default_server_timeout: 20
+    default_cancel_timeout: 50
+    wait_for_service_timeout: 1000
+    introspection_mode: "disabled"
+    navigators: ["navigate_to_pose", "navigate_through_poses"]
+    navigate_to_pose:
+      plugin: "nav2_bt_navigator::NavigateToPoseNavigator"
+      enable_groot_monitoring: false
+      groot_server_port: 1667
+      search_window: 2.0
+    navigate_through_poses:
+      plugin: "nav2_bt_navigator::NavigateThroughPosesNavigator"
+      enable_groot_monitoring: false
+      groot_server_port: 1669
+      search_window: 2.0
+
 global_costmap:
   global_costmap:
     ros__parameters:
@@ -213,6 +267,10 @@ lifecycle_manager_navigation:
       - planner_server
       - controller_server
       - smoother_server
+      - route_server
+      - waypoint_follower
+      - behavior_server
+      - bt_navigator
       - global_costmap
       - local_costmap
       - collision_monitor
