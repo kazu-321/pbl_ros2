@@ -20,6 +20,11 @@ rclcpp_components_register_node(${PROJECT_NAME}
   EXECUTABLE pbl_wheel_odometry_node
 )
 
+rclcpp_components_register_node(${PROJECT_NAME}
+  PLUGIN "pbl_pose_stamped_tf_broadcaster::pbl_pose_stamped_tf_broadcaster"
+  EXECUTABLE pbl_pose_stamped_tf_broadcaster_node
+)
+
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${PCL_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} ${PCL_LIBRARIES})
 ament_target_dependencies(${PROJECT_NAME} tf2_eigen)
