@@ -28,7 +28,8 @@ class pbl_control : public rclcpp::Node {
     static constexpr std::size_t kLeftStickVerticalAxis   = 1;
     static constexpr std::size_t kPowerOnButtonIndex      = 1;
     static constexpr std::size_t kPowerOffButtonIndex     = 0;
-    static constexpr std::size_t kAutoModeButtonIndex     = 2;
+    static constexpr std::size_t kAutoModeOffButtonIndex  = 2;
+    static constexpr std::size_t kAutoModeOnButtonIndex   = 3;
     static constexpr const char *kRightWheelJointName     = "joint0";
     static constexpr const char *kLeftWheelJointName      = "joint1";
 
@@ -45,7 +46,6 @@ class pbl_control : public rclcpp::Node {
     double       max_yaw_acceleration_rad_s2_;
     bool         power_state_;
     bool         auto_mode_state_;
-    bool         last_auto_button_state_;
     rclcpp::Time last_joy_time_;
     rclcpp::Time last_update_time_;
     rclcpp::Time last_auto_command_time_;

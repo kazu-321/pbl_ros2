@@ -23,18 +23,17 @@ Add to your launch file or run as a component node.
 
 ## `pbl_pose_stamped_tf_broadcaster`
 
-This node subscribes to `geometry_msgs/msg/PoseStamped` and publishes TF from `map -> base_link` by default.
+This node subscribes to TF and publishes `geometry_msgs/msg/PoseStamped` on `localization/current_pose` by default.
 
 ### Parameters
-- `pose_topic` (string, default: `/tracked_pose`)
+- `output_topic` (string, default: `/localization/current_pose`)
 - `map_frame_id` (string, default: "map")
 - `base_frame_id` (string, default: "base_link")
-- `transform_tolerance_sec` (double, default: 0.0)
-- `publish_tf` (bool, default: true)
+- `publish_rate_hz` (double, default: 10.0)
+- `transform_timeout_sec` (double, default: 0.1)
 
 ### Topics
-- Subscribes: `pose_topic` (`geometry_msgs/msg/PoseStamped`)
-- Publishes TF: `map -> base_link` when `publish_tf` is `true`
+- Publishes: `output_topic` (`geometry_msgs/msg/PoseStamped`)
 
 ### Usage
-Use this when another node already publishes a `PoseStamped` that represents the robot pose in the map frame.
+Use this when another node already publishes TF for the robot pose and you want a normalized `PoseStamped` stream.

@@ -35,7 +35,6 @@ pbl_control::pbl_control (const rclcpp::NodeOptions &node_options)
       max_yaw_acceleration_rad_s2_ (0.0),
       power_state_ (false),
       auto_mode_state_ (false),
-      last_auto_button_state_ (false),
       last_joy_time_ (this->now ()),
       last_update_time_ (this->now ()),
       last_auto_command_time_ (this->now ()),
@@ -224,19 +223,17 @@ void pbl_control::joy_callback (const sensor_msgs::msg::Joy::SharedPtr msg) {
     if (button_or_zero (kPowerOffButtonIndex) == 1) {
         power_state_ = false;
     }
-    const bool auto_button_pressed = button_or_zero (kAutoModeButtonIndex) == 1;
-    if (auto_button_pressed && !last_auto_button_state_) {
-        auto_mode_state_ = !auto_mode_state_;
-        if (!auto_mode_state_) {
-            target_linear_speed_m_s_ = 0.0;
-            target_yaw_speed_rad_s_  = 0.0;
-        }
+    if (button_or_zero (kAutoModeOnButtonIndex) == 1) {
+        auto_mode_state_ = true;
     }
-    last_auto_button_state_ = auto_button_pressed;
+    if (button_or_zero (kAutoModeOffButtonIndex) == 1) {
+        auto_mode_state_ = false;
+        target_linear_speed_m_s_ = 0.0;
+        target_yaw_speed_rad_s_  = 0.0;
+    }
 
     if (!power_state_) {
         auto_mode_state_ = false;
-        last_auto_button_state_ = false;
         target_linear_speed_m_s_ = 0.0;
         target_yaw_speed_rad_s_  = 0.0;
         current_linear_speed_m_s_ = 0.0;

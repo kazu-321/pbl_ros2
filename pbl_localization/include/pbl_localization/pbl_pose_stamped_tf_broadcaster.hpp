@@ -5,9 +5,9 @@
 #include <string>
 
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/buffer.h"
+#include "tf2_ros/transform_listener.h"
 
 namespace pbl_pose_stamped_tf_broadcaster {
 
@@ -17,16 +17,19 @@ public:
     const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
 
 private:
-  void pose_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+  void publish_current_pose();
 
-  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr pose_sub_;
-  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub_;
+  rclcpp::TimerBase::SharedPtr publish_timer_;
+
+  tf2_ros::Buffer tf_buffer_;
+  tf2_ros::TransformListener tf_listener_;
 
   std::string map_frame_id_;
   std::string base_frame_id_;
-  std::string pose_topic_;
-  double transform_tolerance_sec_;
-  bool publish_tf_;
+  std::string output_topic_;
+  double publish_rate_hz_;
+  double transform_timeout_sec_;
 };
 
 }  // namespace pbl_pose_stamped_tf_broadcaster

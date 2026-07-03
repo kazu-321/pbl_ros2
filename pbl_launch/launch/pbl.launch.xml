@@ -68,6 +68,15 @@
         <param name="alignment_period_sec" value="1.0"/>
     </node>
 
+    <node pkg="pbl_localization" exec="pbl_pose_stamped_tf_broadcaster_node" name="pbl_pose_stamped_tf_broadcaster" output="screen">
+        <param name="output_topic" value="/localization/current_pose"/>
+        <param name="map_frame_id" value="map"/>
+        <param name="base_frame_id" value="base_link"/>
+        <param name="publish_rate_hz" value="10.0"/>
+        <param name="transform_timeout_sec" value="0.1"/>
+        <param name="use_sim_time" value="false"/>
+    </node>
+
     <node pkg="pbl_sensing" exec="pbl_pointcloud2_filter_node" name="pbl_pointcloud2_filter" output="screen">
         <param name="input_topic" value="/unilidar/cloud"/>
         <param name="output_topic" value="/unilidar/cloud_filtered"/>
@@ -135,7 +144,8 @@
         <arg name="autostart" value="false"/>
         <arg name="params_file" value="$(find-pkg-share pbl_launch)/param/nav2.yaml"/>
     </include>
-    
-    <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen"
-        args="-d $(find-pkg-share pbl_launch)/rviz/pbl.rviz"/>
+
+   <include file="$(find-pkg-share rosbridge_server)/launch/rosbridge_websocket_launch.xml"/>
+
+    <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen" args="-d $(find-pkg-share pbl_launch)/rviz/pbl.rviz"/>
 </launch>

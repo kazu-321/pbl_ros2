@@ -5,6 +5,14 @@
     <node pkg="tf2_ros" exec="static_transform_publisher" name="map_to_odom" output="screen"
         args="0 0 0 0 0 0 map odom"/>
 
+    <node pkg="pbl_localization" exec="pbl_pose_stamped_tf_broadcaster_node" name="pbl_pose_stamped_tf_broadcaster" output="screen">
+        <param name="output_topic" value="/localization/current_pose"/>
+        <param name="map_frame_id" value="map"/>
+        <param name="base_frame_id" value="base_link"/>
+        <param name="publish_rate_hz" value="10.0"/>
+        <param name="transform_timeout_sec" value="0.1"/>
+    </node>
+
     <executable cmd="python3 $(find-pkg-share pbl_launch)/launch/publish_pcd.py $(var map_pcd) /map_3d map"/>
 
     <node pkg="pbl_sensing" exec="pbl_occupancy_grid_publisher_node" name="pbl_occupancy_grid_publisher" output="screen">
@@ -57,6 +65,8 @@
         <arg name="autostart" value="true"/>
         <arg name="params_file" value="$(var nav2_params_file)"/>
     </include>
+
+    <include file="$(find-pkg-share rosbridge_server)/launch/rosbridge_websocket_launch.xml"/>
 
     <node pkg="rviz2" exec="rviz2" name="rviz2" output="screen" args="-d $(find-pkg-share pbl_launch)/rviz/pbl.rviz"/>
 </launch>
