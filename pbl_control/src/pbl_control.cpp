@@ -65,6 +65,7 @@ pbl_control::pbl_control (const rclcpp::NodeOptions &node_options)
     joint_command_publisher_      = this->create_publisher<sensor_msgs::msg::JointState> ("/joint_commands", rclcpp::QoS (10));
     command_velocity_publisher_   = this->create_publisher<geometry_msgs::msg::TwistStamped> ("/command_velocity", rclcpp::QoS (10));
     power_publisher_              = this->create_publisher<std_msgs::msg::Bool> ("/power", rclcpp::QoS (10));
+    auto_publisher_               = this->create_publisher<std_msgs::msg::Bool> ("/is_auto", rclcpp::QoS (10));
     joy_subscriber_               = this->create_subscription<sensor_msgs::msg::Joy> ("/controller/joy", rclcpp::QoS (10), std::bind (&pbl_control::joy_callback, this, std::placeholders::_1));
     cmd_vel_smoothed_sub_         = this->create_subscription<geometry_msgs::msg::Twist> (
         "/cmd_vel", rclcpp::QoS (10), std::bind (&pbl_control::cmd_vel_smoothed_callback, this, std::placeholders::_1));
@@ -81,8 +82,10 @@ pbl_control::pbl_control (const rclcpp::NodeOptions &node_options)
     const auto control_period = std::chrono::duration_cast<std::chrono::nanoseconds> (
         std::chrono::duration<double> (1.0 / control_rate_hz_));
     control_timer_ = this->create_wall_timer (control_period, std::bind (&pbl_control::control_timer_callback, this));
+    state_timer_ = this->create_wall_timer (
+        std::chrono::seconds (1), std::bind (&pbl_control::publish_state_topics, this));
 
-    publish_power_state ();
+    publish_state_topics ();
 
     RCLCPP_INFO (this->get_logger (), "pbl_control node has been initialized.");
     RCLCPP_INFO (this->get_logger (), "chassis_max_wheel_speed_rad_s: %.3f", chassis_max_wheel_speed_rad_s_);
@@ -96,6 +99,7 @@ pbl_control::pbl_control (const rclcpp::NodeOptions &node_options)
     RCLCPP_INFO (this->get_logger (), "max_yaw_acceleration_rad_s2: %.3f", max_yaw_acceleration_rad_s2_);
     RCLCPP_INFO (this->get_logger (), "control_rate_hz: %.3f", control_rate_hz_);
     RCLCPP_INFO (this->get_logger (), "auto_command_timeout_sec: %.3f", auto_command_timeout_sec_);
+    publish_auto_state ();
 }
 
 double pbl_control::apply_deadzone (double value, double deadzone) {
@@ -114,6 +118,17 @@ void pbl_control::publish_power_state () {
     std_msgs::msg::Bool power_msg;
     power_msg.data = power_state_;
     power_publisher_->publish (power_msg);
+}
+
+void pbl_control::publish_auto_state () {
+    std_msgs::msg::Bool auto_msg;
+    auto_msg.data = auto_mode_state_;
+    auto_publisher_->publish (auto_msg);
+}
+
+void pbl_control::publish_state_topics () {
+    publish_power_state ();
+    publish_auto_state ();
 }
 
 void pbl_control::publish_joint_commands (double linear_speed_m_s, double yaw_speed_rad_s) {
@@ -173,7 +188,6 @@ void pbl_control::control_timer_callback () {
         target_yaw_speed_rad_s_  = 0.0;
         current_linear_speed_m_s_ = 0.0;
         current_yaw_speed_rad_s_  = 0.0;
-        publish_power_state ();
         publish_joint_commands (0.0, 0.0);
         publish_command_velocity (0.0, 0.0);
         return;
@@ -191,7 +205,6 @@ void pbl_control::control_timer_callback () {
     }
 
     update_motion (dt);
-    publish_power_state ();
     publish_joint_commands (current_linear_speed_m_s_, current_yaw_speed_rad_s_);
     publish_command_velocity (current_linear_speed_m_s_, current_yaw_speed_rad_s_);
 }

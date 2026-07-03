@@ -61,8 +61,10 @@ class pbl_control : public rclcpp::Node {
     void control_timer_callback ();
     void update_motion (double dt);
     void publish_power_state ();
+    void publish_auto_state ();
     void publish_joint_commands (double linear_speed_m_s, double yaw_speed_rad_s);
     void publish_command_velocity (double linear_speed_m_s, double yaw_speed_rad_s);
+    void publish_state_topics ();
 
     static double apply_deadzone (double value, double deadzone);
     static double normalize_pair (double value_a, double value_b, double value);
@@ -70,9 +72,11 @@ class pbl_control : public rclcpp::Node {
     rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr     joint_command_publisher_;
     rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr command_velocity_publisher_;
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr              power_publisher_;
+    rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr              auto_publisher_;
     rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr         joy_subscriber_;
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr     cmd_vel_smoothed_sub_;
     rclcpp::TimerBase::SharedPtr                                    control_timer_;
+    rclcpp::TimerBase::SharedPtr                                    state_timer_;
 };
 }  // namespace pbl_control
 
