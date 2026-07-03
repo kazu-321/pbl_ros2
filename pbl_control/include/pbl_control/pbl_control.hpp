@@ -30,8 +30,8 @@ class pbl_control : public rclcpp::Node {
     static constexpr std::size_t kPowerOffButtonIndex     = 0;
     static constexpr std::size_t kAutoModeOffButtonIndex  = 2;
     static constexpr std::size_t kAutoModeOnButtonIndex   = 3;
-    static constexpr const char *kRightWheelJointName     = "joint0";
-    static constexpr const char *kLeftWheelJointName      = "joint1";
+    static constexpr const char *kRightWheelJointName     = "wheel_right";
+    static constexpr const char *kLeftWheelJointName      = "wheel_left";
 
     double       chassis_max_wheel_speed_rad_s_;
     double       chassis_acceleration_rate_s_;

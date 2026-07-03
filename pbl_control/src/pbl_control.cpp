@@ -138,9 +138,9 @@ void pbl_control::publish_joint_commands (double linear_speed_m_s, double yaw_sp
     sensor_msgs::msg::JointState joint_commands_msg;
     joint_commands_msg.header.frame_id = "command/base_link";
     joint_commands_msg.header.stamp    = this->now ();
-    joint_commands_msg.name            = {"joint0", "joint1"};
+    joint_commands_msg.name            = {"wheel_left", "wheel_right"};
     joint_commands_msg.position        = {0.0, 0.0};
-    joint_commands_msg.velocity        = {right_wheel_speed_rad_s, left_wheel_speed_rad_s};
+    joint_commands_msg.velocity        = {left_wheel_speed_rad_s, right_wheel_speed_rad_s};
     joint_commands_msg.effort          = {0.0, 0.0};
     joint_command_publisher_->publish (joint_commands_msg);
 }

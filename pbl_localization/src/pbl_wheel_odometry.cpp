@@ -35,15 +35,15 @@ void pbl_wheel_odometry::joint_state_callback (const sensor_msgs::msg::JointStat
     std::size_t right_wheel_index = msg->name.size ();
     std::size_t left_wheel_index  = msg->name.size ();
     for (std::size_t i = 0; i < msg->name.size (); ++i) {
-        if (msg->name[i] == "joint0") {
+        if (msg->name[i] == "wheel_right") {
             right_wheel_index = i;
         }
-        if (msg->name[i] == "joint1") {
+        if (msg->name[i] == "wheel_left") {
             left_wheel_index = i;
         }
     }
     if (right_wheel_index == msg->name.size () || left_wheel_index == msg->name.size ()) {
-        RCLCPP_WARN_THROTTLE (this->get_logger (), *this->get_clock (), 3000, "Could not find joint0/joint1 in /joint_states.");
+        RCLCPP_WARN_THROTTLE (this->get_logger (), *this->get_clock (), 3000, "Could not find wheel_right/wheel_left in /joint_states.");
         return;
     }
 

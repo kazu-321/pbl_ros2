@@ -13,6 +13,7 @@
   <depend>pbl_control</depend>
   <depend>pbl_localization</depend>
   <depend>pbl_simulation</depend>
+  <depend>pbl_communication</depend>
   <depend>natto_msgs</depend>
   <depend>cartographer_ros</depend>
   <depend>unitree_lidar_ros2</depend>

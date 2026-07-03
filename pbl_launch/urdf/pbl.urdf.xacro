@@ -103,7 +103,7 @@
     </joint>
   </xacro:macro>
 
-  <xacro:drive_wheel name="joint0" x="0.0" y="${-rear_wheel_y}"/>
-  <xacro:drive_wheel name="joint1" x="0.0" y="${rear_wheel_y}"/>
+  <xacro:drive_wheel name="wheel_right" x="0.0" y="${-rear_wheel_y}"/>
+  <xacro:drive_wheel name="wheel_left" x="0.0" y="${rear_wheel_y}"/>
 
 </robot>

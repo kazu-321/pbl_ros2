@@ -10,8 +10,8 @@
 
 namespace pbl_simulation {
 namespace {
-constexpr const char *kRightWheelJointName = "joint0";
-constexpr const char *kLeftWheelJointName = "joint1";
+constexpr const char *kRightWheelJointName = "wheel_right";
+constexpr const char *kLeftWheelJointName = "wheel_left";
 
 bool has_stamp(const builtin_interfaces::msg::Time & stamp) {
     return stamp.sec != 0 || stamp.nanosec != 0;
@@ -105,7 +105,7 @@ void pbl_joint_state_simulator::store_joint_command(const sensor_msgs::msg::Join
         if (msg.velocity.size() < 2) {
             RCLCPP_WARN_THROTTLE(
                 this->get_logger(), *this->get_clock(), 3000,
-                "joint_commands did not contain joint0/joint1 velocity entries.");
+                "joint_commands did not contain wheel_right/wheel_left velocity entries.");
             return;
         }
         right_speed_rad_s = msg.velocity[0];

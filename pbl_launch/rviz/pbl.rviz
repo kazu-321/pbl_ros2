@@ -47,9 +47,9 @@ Visualization Manager:
           Value: true
         command/base_link:
           Value: true
-        command/joint0_link:
+        command/wheel_right_link:
           Value: true
-        command/joint1_link:
+        command/wheel_left_link:
           Value: true
         command/pc:
           Value: true
@@ -57,9 +57,9 @@ Visualization Manager:
           Value: true
         command/unilidar_lidar:
           Value: true
-        joint0_link:
+        wheel_right_link:
           Value: true
-        joint1_link:
+        wheel_left_link:
           Value: true
         map:
           Value: true
@@ -81,18 +81,18 @@ Visualization Manager:
           odom:
             base_link:
               command/base_link:
-                command/joint0_link:
+                command/wheel_right_link:
                   {}
-                command/joint1_link:
+                command/wheel_left_link:
                   {}
                 command/pc:
                   {}
                 command/unilidar_lidar:
                   command/unilidar_imu:
                     {}
-              joint0_link:
+              wheel_right_link:
                 {}
-              joint1_link:
+              wheel_left_link:
                 {}
               pc:
                 {}
@@ -126,12 +126,12 @@ Visualization Manager:
               Show Axes: false
               Show Trail: false
               Value: true
-            joint0_link:
+            wheel_right_link:
               Alpha: 1
               Show Axes: false
               Show Trail: false
               Value: true
-            joint1_link:
+            wheel_left_link:
               Alpha: 1
               Show Axes: false
               Show Trail: false
