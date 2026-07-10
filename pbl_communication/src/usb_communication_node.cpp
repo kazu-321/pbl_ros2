@@ -55,8 +55,8 @@ usb_communication_node::~usb_communication_node() {
 }
 
 void usb_communication_node::joint_command_callback(const sensor_msgs::msg::JointState::SharedPtr msg) {
-    RCLCPP_INFO(this->get_logger(), "joint_commands received: name_count=%zu velocity_count=%zu",
-                msg->name.size(), msg->velocity.size());
+    // RCLCPP_INFO(this->get_logger(), "joint_commands received: name_count=%zu velocity_count=%zu",
+    //             msg->name.size(), msg->velocity.size());
     double right = 0.0;
     double left = 0.0;
     bool found_right = false;
@@ -86,8 +86,8 @@ void usb_communication_node::joint_command_callback(const sensor_msgs::msg::Join
     pending_command_.left_rpm = static_cast<int32_t>(std::lround(left * 60.0 / (2.0 * kPi)));
     pending_command_.valid = true;
     has_pending_command_ = true;
-    RCLCPP_INFO(this->get_logger(), "Queued USB command: left=%ld rpm right=%ld rpm",
-                static_cast<long>(pending_command_.left_rpm), static_cast<long>(pending_command_.right_rpm));
+    // RCLCPP_INFO(this->get_logger(), "Queued USB command: left=%ld rpm right=%ld rpm",
+    //             static_cast<long>(pending_command_.left_rpm), static_cast<long>(pending_command_.right_rpm));
 }
 
 bool usb_communication_node::open_serial() {
@@ -182,7 +182,7 @@ bool usb_communication_node::write_command_line(int32_t right_rpm, int32_t left_
     }
     const ssize_t written = ::write(serial_fd_, buffer, static_cast<std::size_t>(len));
     if (written == len) {
-        RCLCPP_INFO(this->get_logger(), "USB TX: %s", buffer);
+        // RCLCPP_INFO(this->get_logger(), "USB TX: %s", buffer);
         return true;
     }
     RCLCPP_WARN(this->get_logger(), "USB TX failed on %s", port_.c_str());
@@ -228,8 +228,8 @@ void usb_communication_node::poll_serial() {
     }
 
     if (has_pending_command_) {
-        RCLCPP_INFO(this->get_logger(), "Sending pending USB command: left=%ld rpm right=%ld rpm",
-                    static_cast<long>(pending_command_.left_rpm), static_cast<long>(pending_command_.right_rpm));
+        // RCLCPP_INFO(this->get_logger(), "Sending pending USB command: left=%ld rpm right=%ld rpm",
+        //             static_cast<long>(pending_command_.left_rpm), static_cast<long>(pending_command_.right_rpm));
         if (write_command_line(pending_command_.right_rpm, pending_command_.left_rpm)) {
             has_pending_command_ = false;
         }
@@ -269,7 +269,7 @@ void usb_communication_node::poll_serial() {
                 last_right_rpm_ = right_rpm;
                 last_left_rpm_ = left_rpm;
                 last_feedback_stamp_ = this->now();
-                RCLCPP_INFO(this->get_logger(), "USB RX: %+d,%+d", left_rpm, right_rpm);
+                // RCLCPP_INFO(this->get_logger(), "USB RX: %+d,%+d", left_rpm, right_rpm);
                 publish_joint_state(right_rpm, left_rpm);
             }
         }

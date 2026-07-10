@@ -9,8 +9,13 @@ ament_auto_add_library(${PROJECT_NAME} SHARED
 )
 
 rclcpp_components_register_node(${PROJECT_NAME}
-  PLUGIN "pbl_simulation::pbl_joint_state_simulator"
-  EXECUTABLE pbl_joint_state_simulator_node
+    PLUGIN "pbl_simulation::pbl_joint_state_simulator"
+    EXECUTABLE pbl_joint_state_simulator_node
+)
+
+rclcpp_components_register_node(${PROJECT_NAME}
+    PLUGIN "pbl_simulation::pbl_lidar_simulator"
+    EXECUTABLE pbl_lidar_simulator_node
 )
 
 ament_auto_package(USE_SCOPED_HEADER_INSTALL_DIR)

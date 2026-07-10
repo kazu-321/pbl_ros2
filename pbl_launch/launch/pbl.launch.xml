@@ -32,6 +32,8 @@
         </composable_node>
         <composable_node pkg="pbl_control" plugin="pbl_control::pbl_control" name="pbl_control">
             <param name="chassis_acceleration_rate_s" value="0.5"/>
+            <param name="max_linear_speed_m_s" value="1.5"/>
+            <param name="max_yaw_speed_rad_s" value="3.14"/>
         </composable_node>
         <composable_node pkg="pbl_localization" plugin="pbl_wheel_odometry::pbl_wheel_odometry" name="pbl_wheel_odometry">
             <param name="publish_tf" value="false"/>
@@ -75,10 +77,10 @@
         <param name="target_frame_id" value="base_link"/>
         <param name="body_box_center_x" value="0.14"/>
         <param name="body_box_center_y" value="0.0"/>
-        <param name="body_box_center_z" value="0.1"/>
-        <param name="body_box_size_x" value="0.45"/>
-        <param name="body_box_size_y" value="0.55"/>
-        <param name="body_box_size_z" value="0.15"/>
+        <param name="body_box_center_z" value="0.2"/>
+        <param name="body_box_size_x" value="0.5"/>
+        <param name="body_box_size_y" value="0.6"/>
+        <param name="body_box_size_z" value="0.4"/>
         <param name="pc_box_center_x" value="-0.04"/>
         <param name="pc_box_center_y" value="0.0"/>
         <param name="pc_box_center_z" value="0.315"/>

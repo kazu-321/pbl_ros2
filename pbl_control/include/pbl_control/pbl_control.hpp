@@ -38,6 +38,8 @@ class pbl_control : public rclcpp::Node {
     double       wheel_radius_;
     double       wheel_separation_;
     double       wheel_axle_x_;
+    double       configured_max_linear_speed_m_s_;
+    double       configured_max_yaw_speed_rad_s_;
     double       max_linear_speed_m_s_;
     double       max_yaw_speed_rad_s_;
     double       current_linear_speed_m_s_;
@@ -75,8 +77,8 @@ class pbl_control : public rclcpp::Node {
     rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr              auto_publisher_;
     rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr         joy_subscriber_;
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr     cmd_vel_smoothed_sub_;
-    rclcpp::TimerBase::SharedPtr                                    control_timer_;
-    rclcpp::TimerBase::SharedPtr                                    state_timer_;
+    rclcpp::TimerBase::SharedPtr                                   control_timer_;
+    rclcpp::TimerBase::SharedPtr                                   state_timer_;
 };
 }  // namespace pbl_control
 

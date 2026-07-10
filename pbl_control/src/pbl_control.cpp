@@ -14,8 +14,8 @@
 
 #include "pbl_control/pbl_control.hpp"
 
-#include <chrono>
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 
 namespace pbl_control {
@@ -27,6 +27,8 @@ pbl_control::pbl_control (const rclcpp::NodeOptions &node_options)
       wheel_radius_ (this->declare_parameter<double> ("wheel_radius", 0.05)),
       wheel_separation_ (this->declare_parameter<double> ("wheel_separation", 0.46)),
       wheel_axle_x_ (this->declare_parameter<double> ("wheel_axle_x", -0.14)),
+      configured_max_linear_speed_m_s_ (this->declare_parameter<double> ("max_linear_speed_m_s", 0.0)),
+      configured_max_yaw_speed_rad_s_ (this->declare_parameter<double> ("max_yaw_speed_rad_s", 0.0)),
       max_linear_speed_m_s_ (0.0),
       max_yaw_speed_rad_s_ (0.0),
       current_linear_speed_m_s_ (0.0),
@@ -58,8 +60,19 @@ pbl_control::pbl_control (const rclcpp::NodeOptions &node_options)
         wheel_separation_ = 0.46;
     }
 
-    max_linear_speed_m_s_         = wheel_radius_ * chassis_max_wheel_speed_rad_s_;
-    max_yaw_speed_rad_s_          = (2.0 * max_linear_speed_m_s_) / wheel_separation_;
+    const double theoretical_max_linear_speed_m_s = wheel_radius_ * chassis_max_wheel_speed_rad_s_;
+    const double theoretical_max_yaw_speed_rad_s  = (2.0 * theoretical_max_linear_speed_m_s) / wheel_separation_;
+
+    max_linear_speed_m_s_ = theoretical_max_linear_speed_m_s;
+    if (std::isfinite (configured_max_linear_speed_m_s_) && configured_max_linear_speed_m_s_ > 0.0) {
+        max_linear_speed_m_s_ = std::min (configured_max_linear_speed_m_s_, theoretical_max_linear_speed_m_s);
+    }
+
+    max_yaw_speed_rad_s_ = theoretical_max_yaw_speed_rad_s;
+    if (std::isfinite (configured_max_yaw_speed_rad_s_) && configured_max_yaw_speed_rad_s_ > 0.0) {
+        max_yaw_speed_rad_s_ = std::min (configured_max_yaw_speed_rad_s_, theoretical_max_yaw_speed_rad_s);
+    }
+
     max_linear_acceleration_m_s2_ = max_linear_speed_m_s_ / chassis_acceleration_rate_s_;
     max_yaw_acceleration_rad_s2_  = max_yaw_speed_rad_s_ / chassis_acceleration_rate_s_;
     joint_command_publisher_      = this->create_publisher<sensor_msgs::msg::JointState> ("/joint_commands", rclcpp::QoS (10));
@@ -67,8 +80,7 @@ pbl_control::pbl_control (const rclcpp::NodeOptions &node_options)
     power_publisher_              = this->create_publisher<std_msgs::msg::Bool> ("/power", rclcpp::QoS (10));
     auto_publisher_               = this->create_publisher<std_msgs::msg::Bool> ("/is_auto", rclcpp::QoS (10));
     joy_subscriber_               = this->create_subscription<sensor_msgs::msg::Joy> ("/controller/joy", rclcpp::QoS (10), std::bind (&pbl_control::joy_callback, this, std::placeholders::_1));
-    cmd_vel_smoothed_sub_         = this->create_subscription<geometry_msgs::msg::Twist> (
-        "/cmd_vel", rclcpp::QoS (10), std::bind (&pbl_control::cmd_vel_smoothed_callback, this, std::placeholders::_1));
+    cmd_vel_smoothed_sub_         = this->create_subscription<geometry_msgs::msg::Twist> ("/cmd_vel", rclcpp::QoS (10), std::bind (&pbl_control::cmd_vel_smoothed_callback, this, std::placeholders::_1));
 
     if (control_rate_hz_ <= 0.0) {
         RCLCPP_WARN (this->get_logger (), "control_rate_hz must be positive. Falling back to 50.0 Hz.");
@@ -79,11 +91,9 @@ pbl_control::pbl_control (const rclcpp::NodeOptions &node_options)
         auto_command_timeout_sec_ = 0.5;
     }
 
-    const auto control_period = std::chrono::duration_cast<std::chrono::nanoseconds> (
-        std::chrono::duration<double> (1.0 / control_rate_hz_));
-    control_timer_ = this->create_wall_timer (control_period, std::bind (&pbl_control::control_timer_callback, this));
-    state_timer_ = this->create_wall_timer (
-        std::chrono::seconds (1), std::bind (&pbl_control::publish_state_topics, this));
+    const auto control_period = std::chrono::duration_cast<std::chrono::nanoseconds> (std::chrono::duration<double> (1.0 / control_rate_hz_));
+    control_timer_            = this->create_wall_timer (control_period, std::bind (&pbl_control::control_timer_callback, this));
+    state_timer_              = this->create_wall_timer (std::chrono::seconds (1), std::bind (&pbl_control::publish_state_topics, this));
 
     publish_state_topics ();
 
@@ -93,6 +103,10 @@ pbl_control::pbl_control (const rclcpp::NodeOptions &node_options)
     RCLCPP_INFO (this->get_logger (), "wheel_radius: %.3f", wheel_radius_);
     RCLCPP_INFO (this->get_logger (), "wheel_separation: %.3f", wheel_separation_);
     RCLCPP_INFO (this->get_logger (), "wheel_axle_x: %.3f", wheel_axle_x_);
+    RCLCPP_INFO (this->get_logger (), "configured_max_linear_speed_m_s: %.3f (<= 0 means theoretical limit)", configured_max_linear_speed_m_s_);
+    RCLCPP_INFO (this->get_logger (), "configured_max_yaw_speed_rad_s: %.3f (<= 0 means theoretical limit)", configured_max_yaw_speed_rad_s_);
+    RCLCPP_INFO (this->get_logger (), "theoretical_max_linear_speed_m_s: %.3f", theoretical_max_linear_speed_m_s);
+    RCLCPP_INFO (this->get_logger (), "theoretical_max_yaw_speed_rad_s: %.3f", theoretical_max_yaw_speed_rad_s);
     RCLCPP_INFO (this->get_logger (), "max_linear_speed_m_s: %.3f", max_linear_speed_m_s_);
     RCLCPP_INFO (this->get_logger (), "max_yaw_speed_rad_s: %.3f", max_yaw_speed_rad_s_);
     RCLCPP_INFO (this->get_logger (), "max_linear_acceleration_m_s2: %.3f", max_linear_acceleration_m_s2_);
@@ -156,14 +170,14 @@ void pbl_control::publish_command_velocity (double linear_speed_m_s, double yaw_
 }
 
 void pbl_control::cmd_vel_smoothed_callback (const geometry_msgs::msg::Twist::SharedPtr msg) {
-    auto_target_linear_speed_m_s_ = msg->linear.x;
-    auto_target_yaw_speed_rad_s_  = msg->angular.z;
+    auto_target_linear_speed_m_s_ = std::clamp (msg->linear.x, -max_linear_speed_m_s_, max_linear_speed_m_s_);
+    auto_target_yaw_speed_rad_s_  = std::clamp (msg->angular.z, -max_yaw_speed_rad_s_, max_yaw_speed_rad_s_);
     last_auto_command_time_       = this->now ();
 }
 
 void pbl_control::update_motion (double dt) {
     const double max_linear_delta = max_linear_acceleration_m_s2_ * dt;
-    const double max_yaw_delta     = max_yaw_acceleration_rad_s2_ * dt;
+    const double max_yaw_delta    = max_yaw_acceleration_rad_s2_ * dt;
 
     if (target_linear_speed_m_s_ > current_linear_speed_m_s_) {
         current_linear_speed_m_s_ = std::min (current_linear_speed_m_s_ + max_linear_delta, target_linear_speed_m_s_);
@@ -184,8 +198,8 @@ void pbl_control::control_timer_callback () {
     last_update_time_      = now;
 
     if (!power_state_) {
-        target_linear_speed_m_s_ = 0.0;
-        target_yaw_speed_rad_s_  = 0.0;
+        target_linear_speed_m_s_  = 0.0;
+        target_yaw_speed_rad_s_   = 0.0;
         current_linear_speed_m_s_ = 0.0;
         current_yaw_speed_rad_s_  = 0.0;
         publish_joint_commands (0.0, 0.0);
@@ -240,15 +254,15 @@ void pbl_control::joy_callback (const sensor_msgs::msg::Joy::SharedPtr msg) {
         auto_mode_state_ = true;
     }
     if (button_or_zero (kAutoModeOffButtonIndex) == 1) {
-        auto_mode_state_ = false;
+        auto_mode_state_         = false;
         target_linear_speed_m_s_ = 0.0;
         target_yaw_speed_rad_s_  = 0.0;
     }
 
     if (!power_state_) {
-        auto_mode_state_ = false;
-        target_linear_speed_m_s_ = 0.0;
-        target_yaw_speed_rad_s_  = 0.0;
+        auto_mode_state_          = false;
+        target_linear_speed_m_s_  = 0.0;
+        target_yaw_speed_rad_s_   = 0.0;
         current_linear_speed_m_s_ = 0.0;
         current_yaw_speed_rad_s_  = 0.0;
         return;

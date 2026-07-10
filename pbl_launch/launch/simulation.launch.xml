@@ -51,6 +51,17 @@
         <param name="command_timeout_sec" value="0.5"/>
     </node>
 
+    <node pkg="pbl_simulation" exec="pbl_lidar_simulator_node" name="pbl_lidar_simulator" output="screen">
+        <param name="clicked_point_topic" value="/clicked_point"/>
+        <param name="output_topic" value="/unilidar/cloud_filtered"/>
+        <param name="target_frame_id" value="base_link"/>
+        <param name="publish_rate_hz" value="20.0"/>
+        <param name="obstacle_radius_m" value="0.25"/>
+        <param name="obstacle_height_m" value="1.7"/>
+        <param name="point_spacing_m" value="0.08"/>
+        <param name="obstacle_timeout_sec" value="0.0"/>
+    </node>
+
     <node pkg="joy" exec="game_controller_node" name="joy" output="screen" namespace="/controller">
         <param name="deadzone" value="0.1"/>
         <param name="autorepeat_rate" value="1000.0"/>
@@ -58,6 +69,8 @@
 
     <node pkg="pbl_control" exec="pbl_control_node" name="pbl_control" output="screen">
         <param name="chassis_acceleration_rate_s" value="0.5"/>
+        <param name="max_linear_speed_m_s" value="1.5"/>
+        <param name="max_yaw_speed_rad_s" value="3.14"/>
     </node>
 
     <include file="$(find-pkg-share pbl_launch)/launch/nav2.launch.py">

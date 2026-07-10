@@ -1,0 +1,54 @@
+# DWB backup configuration.
+#
+# This file is intentionally not loaded by any launch file. The active
+# controller is Regulated Pure Pursuit in nav2.yaml.
+# To restore DWB, replace the FollowPath block in nav2.yaml with the block
+# below and set controller_plugins to ["FollowPath"].
+#
+# FollowPath:
+#   plugin: "dwb_core::DWBLocalPlanner"
+#   debug_trajectory_details: true
+#   min_vel_x: 0.0
+#   max_vel_x: 0.6
+#   min_vel_y: 0.0
+#   max_vel_y: 0.0
+#   max_vel_theta: 1.2
+#   min_speed_xy: 0.0
+#   max_speed_xy: 0.6
+#   min_speed_theta: 0.0
+#   acc_lim_x: 0.5
+#   decel_lim_x: -0.8
+#   acc_lim_y: 0.0
+#   decel_lim_y: 0.0
+#   acc_lim_theta: 1.5
+#   decel_lim_theta: -2.0
+#   vx_samples: 21
+#   vy_samples: 1
+#   vtheta_samples: 41
+#   sim_time: 1.5
+#   linear_granularity: 0.05
+#   angular_granularity: 0.025
+#   transform_tolerance: 0.2
+#   xy_goal_tolerance: 0.20
+#   trans_stopped_velocity: 0.05
+#   short_circuit_trajectory_evaluation: true
+#   stateful: true
+#   critics:
+#     - "RotateToGoal"
+#     - "Oscillation"
+#     - "BaseObstacle"
+#     - "GoalAlign"
+#     - "PathAlign"
+#     - "PathDist"
+#     - "GoalDist"
+#   BaseObstacle.scale: 10.0
+#   PathAlign.scale: 24.0
+#   GoalAlign.scale: 16.0
+#   PathDist.scale: 32.0
+#   GoalDist.scale: 24.0
+#   RotateToGoal.scale: 24.0
+#   Oscillation.scale: 1.0
+#   forward_point_distance: 0.325
+#   stop_time_buffer: 0.2
+#   slowing_factor: 5.0
+#   lookahead_time: -1.0
