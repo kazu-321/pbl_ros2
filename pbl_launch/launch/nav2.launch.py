@@ -16,6 +16,7 @@ from nav2_common.launch import RewrittenYaml
 
 def generate_launch_description():
     bringup_dir = get_package_share_directory('nav2_bringup')
+    pbl_launch_dir = get_package_share_directory('pbl_launch')
 
     namespace = LaunchConfiguration('namespace')
     use_sim_time = LaunchConfiguration('use_sim_time')
@@ -30,7 +31,6 @@ def generate_launch_description():
         'planner_server',
         'route_server',
         'waypoint_follower',
-        'behavior_server',
         'bt_navigator',
     ]
 
@@ -38,6 +38,12 @@ def generate_launch_description():
 
     param_substitutions = {
         'autostart': autostart,
+        'default_nav_to_pose_bt_xml': os.path.join(
+            pbl_launch_dir, 'behavior_trees', 'navigate_to_pose_no_recovery.xml'
+        ),
+        'default_nav_through_poses_bt_xml': os.path.join(
+            pbl_launch_dir, 'behavior_trees', 'navigate_through_poses_no_recovery.xml'
+        ),
     }
 
     configured_params = ParameterFile(
@@ -137,17 +143,6 @@ def generate_launch_description():
                 package='nav2_waypoint_follower',
                 executable='waypoint_follower',
                 name='waypoint_follower',
-                output='screen',
-                respawn=use_respawn,
-                respawn_delay=2.0,
-                parameters=[configured_params],
-                arguments=['--ros-args', '--log-level', log_level],
-                remappings=remappings,
-            ),
-            Node(
-                package='nav2_behaviors',
-                executable='behavior_server',
-                name='behavior_server',
                 output='screen',
                 respawn=use_respawn,
                 respawn_delay=2.0,

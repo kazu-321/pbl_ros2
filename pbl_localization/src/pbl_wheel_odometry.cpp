@@ -17,7 +17,7 @@ pbl_wheel_odometry::pbl_wheel_odometry (const rclcpp::NodeOptions &options)
       wheel_radius_ (this->declare_parameter<double> ("wheel_radius", 0.05)),
       wheel_separation_ (this->declare_parameter<double> ("wheel_separation", 0.46)),
       publish_tf_ (this->declare_parameter<bool> ("publish_tf", false)) {
-    odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry> ("/odometry", 10);
+    odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry> ("/odometry", rclcpp::SensorDataQoS ());
     if (publish_tf_) {
         tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster> (this);
     }
@@ -47,10 +47,11 @@ void pbl_wheel_odometry::joint_state_callback (const sensor_msgs::msg::JointStat
         return;
     }
 
-    const bool         has_positions  = right_wheel_index < msg->position.size () && left_wheel_index < msg->position.size ();
-    const bool         has_velocities = right_wheel_index < msg->velocity.size () && left_wheel_index < msg->velocity.size ();
-    const bool         has_stamp      = msg->header.stamp.sec != 0 || msg->header.stamp.nanosec != 0;
-    const rclcpp::Time stamp          = has_stamp ? rclcpp::Time (msg->header.stamp) : this->now ();
+    const bool         has_positions      = right_wheel_index < msg->position.size () && left_wheel_index < msg->position.size ();
+    const bool         has_velocities     = right_wheel_index < msg->velocity.size () && left_wheel_index < msg->velocity.size ();
+    const bool         positions_are_zero = has_positions && std::abs (msg->position[right_wheel_index]) < 1.0e-9 && std::abs (msg->position[left_wheel_index]) < 1.0e-9;
+    const bool         has_stamp          = msg->header.stamp.sec != 0 || msg->header.stamp.nanosec != 0;
+    const rclcpp::Time stamp              = has_stamp ? rclcpp::Time (msg->header.stamp) : this->now ();
 
     if (!odom_initialized_) {
         last_joint_state_time_         = stamp;
@@ -66,7 +67,7 @@ void pbl_wheel_odometry::joint_state_callback (const sensor_msgs::msg::JointStat
 
     double right_wheel_delta_rad = 0.0;
     double left_wheel_delta_rad  = 0.0;
-    if (has_positions) {
+    if (has_positions && !positions_are_zero) {
         right_wheel_delta_rad          = msg->position[right_wheel_index] - last_right_wheel_position_rad_;
         left_wheel_delta_rad           = msg->position[left_wheel_index] - last_left_wheel_position_rad_;
         last_right_wheel_position_rad_ = msg->position[right_wheel_index];

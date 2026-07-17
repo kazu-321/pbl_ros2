@@ -1,7 +1,7 @@
 <launch>
     <let name="map_dir" value="$(env PBL_MAP_DIR $(find-pkg-share pbl_launch)/map)"/>
 
-    <include file="$(find-pkg-share pbl_launch)/launch/lidar.launch.py"/>
+    <!-- <include file="$(find-pkg-share pbl_launch)/launch/lidar.launch.py"/> -->
 
     <node_container pkg="rclcpp_components" exec="component_container" name="pbl_robot_container" namespace="/">
         <composable_node pkg="robot_state_publisher" plugin="robot_state_publisher::RobotStatePublisher" name="robot_state_publisher" namespace="/">
@@ -74,12 +74,16 @@
         <param name="input_topic" value="/unilidar/cloud"/>
         <param name="output_topic" value="/unilidar/cloud_filtered"/>
         <param name="output_topic_transformed" value="/unilidar/cloud_filtered_transformed"/>
+        <param name="navigation_output_topic" value="/unilidar/cloud_navigation"/>
+        <param name="navigation_lidar_frame_id" value="unilidar_lidar"/>
+        <param name="navigation_min_height" value="0.0"/>
+        <param name="navigation_max_height" value="0.6"/>
         <param name="target_frame_id" value="base_link"/>
         <param name="body_box_center_x" value="0.14"/>
         <param name="body_box_center_y" value="0.0"/>
         <param name="body_box_center_z" value="0.2"/>
         <param name="body_box_size_x" value="0.5"/>
-        <param name="body_box_size_y" value="0.6"/>
+        <param name="body_box_size_y" value="0.8"/>
         <param name="body_box_size_z" value="0.4"/>
         <param name="pc_box_center_x" value="-0.04"/>
         <param name="pc_box_center_y" value="0.0"/>
@@ -134,7 +138,7 @@
 
     <include file="$(find-pkg-share pbl_launch)/launch/nav2.launch.py">
         <arg name="use_sim_time" value="false"/>
-        <arg name="autostart" value="false"/>
+        <arg name="autostart" value="true"/>
         <arg name="params_file" value="$(find-pkg-share pbl_launch)/param/nav2.yaml"/>
     </include>
 

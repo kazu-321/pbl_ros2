@@ -14,6 +14,10 @@
         <param name="input_topic" value="/unilidar/cloud"/>
         <param name="output_topic" value="/unilidar/cloud_filtered"/>
         <param name="output_topic_transformed" value="/unilidar/cloud_filtered_transformed"/>
+        <param name="navigation_output_topic" value="/unilidar/cloud_navigation"/>
+        <param name="navigation_lidar_frame_id" value="unilidar_lidar"/>
+        <param name="navigation_min_height" value="0.0"/>
+        <param name="navigation_max_height" value="0.6"/>
         <param name="target_frame_id" value="base_link"/>
         <param name="body_box_center_x" value="0.14"/>
         <param name="body_box_center_y" value="0.0"/>
